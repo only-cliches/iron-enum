@@ -259,7 +259,7 @@ export function IronEnum<VARIANTS extends { [key: string]: any }>(): ObjectToBui
  * 
  * @returns IronEnum<{Some: T, None}>
  */
-export const Option = <T>() => IronEnum<{
+export const Option = <T>(): ReturnType<typeof IronEnum<{None: {}, Some: T}>> => IronEnum<{
     None: {},
     Some: T
 }>()
@@ -273,9 +273,9 @@ export const Option = <T>() => IronEnum<{
  * // or
  * const myResult = Result<number, Error>().Result(22);
  * 
- * @returns 
+ * @returns IronEnum<{Ok: T, Err: E}>
  */
-export const Result = <T, E>() => IronEnum<{
+export const Result = <T, E>(): ReturnType<typeof IronEnum<{Ok: T, Err: E}>> => IronEnum<{
     Ok: T,
     Err: E
 }>()
