@@ -20,6 +20,7 @@
  * 
  * But what if you wanted to provide data for each variant that is context specific?  Well now you can!
  * 
+ * ## Code Example
  * ```ts
  * import { IronEnum } from "iron-enum";
  * 
@@ -66,7 +67,7 @@
  *     // runs if the shape is NOT a square
  * }
  * 
- * console.log(exampleShape.unwarp())
+ * console.log(exampleShape.unwrap())
  * // output: ["Square", { width: 22, height: 50 }]
  * 
  * // this method will only allow ShapeEnum variants as an argument
@@ -76,6 +77,42 @@
  * ```
  * 
  * Just like in Rust, the `.match(...)` keys *must* contain a callback for each variant OR provide a fallback method with a `_` property.  Failing this constraint leads to a type error.
+ * 
+ * ## Option & Result Examples
+ * ```ts
+ * import { Option, Result } from "iron-enum";
+ * 
+ * const NumOption = Option<number>();
+ * 
+ * const myNum = NumOption.Some(22);
+ * 
+ * myNum.match({
+ *     Some: (num) => {
+ *         // only runs if myNum is "Some" variant
+ *     },
+ *     None: () => {
+ *         // only runs if myNum is "None" variant
+ *     }
+ * })
+ * 
+ * const NumResult = Result<number, Error>();
+ * 
+ * const myNum2 = NumResult.Ok(22);
+ * 
+ * myNum2.match({
+ *     Ok: (num) => {
+ *         // only runs if myNum2 is "Ok" variant
+ *     },
+ *     Err: () => {
+ *         // only runs if myNum2 is "Err" variant
+ *     }
+ * })
+ * 
+ * if (myNum2.if.Ok()) {
+ *     // only runs if myNum2 is "Ok" variant
+ * }
+ * ```
+ * 
  * 
  * @module
  */
@@ -210,3 +247,35 @@ export function IronEnum<VARIANTS extends { [key: string]: any }>(): ObjectToBui
         }
     }) as any;
 }
+
+/**
+ * Option type, usage:
+ * 
+ * // create a type specific option
+ * const NumOption = Option<number>();
+ * const myNumber = NumOption.Some(22);
+ * // or
+ * const myNumber = Option<number>().Some(22);
+ * 
+ * @returns IronEnum<{Some: T, None}>
+ */
+export const Option = <T>() => IronEnum<{
+    None: {},
+    Some: T
+}>()
+
+
+/**
+ * Result type, usage:
+ * 
+ * const NumResult = Result<number, Error>();
+ * const myResult = NumResult.Result(22);
+ * // or
+ * const myResult = Result<number, Error>().Result(22);
+ * 
+ * @returns 
+ */
+export const Result = <T, E>() => IronEnum<{
+    Ok: T,
+    Err: E
+}>()
