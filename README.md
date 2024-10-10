@@ -6,6 +6,8 @@ Finally Rust like enums in Typescript!
 - Fully type safe!
 - Only 500 bytes!
 
+| [Github](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
+
 Typescript enums only provide simple variants:
 ```ts
 enum Shape {
