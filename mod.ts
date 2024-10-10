@@ -7,6 +7,7 @@
  * - Ergonomic AF!
  * - Fully type safe!
  * - Only 500 bytes!
+ * - Includes `Option` and `Result` types!
  * 
  * | [Github](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
  * 
