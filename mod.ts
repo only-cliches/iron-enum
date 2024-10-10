@@ -51,7 +51,7 @@ class EnumGenerator<VARIANTS extends { [key: string]: any }> {
      * 
      * @returns 
      */
-    public unwrap() {
+    public unwrap(): ObjectToTuple<VARIANTS> {
         return this.__;
     }
 
@@ -121,7 +121,7 @@ class EnumGenerator<VARIANTS extends { [key: string]: any }> {
  * @param name The name of the person to greet.
  */
 
-export function IronEnum<VARIANTS extends { [key: string]: any }>() {
+export function IronEnum<VARIANTS extends { [key: string]: any }>(): ObjectToBuidlerMap<VARIANTS> & {_self: typeof EnumGenerator<VARIANTS> } {
 
     return new Proxy({}, {
         get: (tgt, prop, rcv) => {
@@ -130,5 +130,5 @@ export function IronEnum<VARIANTS extends { [key: string]: any }>() {
                 return new EnumGenerator<VARIANTS>([prop, args] as any);
             }
         }
-    }) as ObjectToBuidlerMap<VARIANTS> & {_self: typeof EnumGenerator<VARIANTS> }
+    }) as any;
 }
