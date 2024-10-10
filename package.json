@@ -1,0 +1,15 @@
+{
+  "name": "iron-enum",
+  "version": "1.0.0",
+  "description": "Rust like enums for Typescript",
+  "main": "dist/mod.js",
+  "types": "dist/mod.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Scott Lott <me@scottlott.com>",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/only-cliches/iron-enum"
+  }
+}
