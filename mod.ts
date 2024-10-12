@@ -6,7 +6,7 @@
  * 
  * - Ergonomic AF!
  * - Fully type safe!
- * - Only 500 bytes!
+ * - Only 400 bytes gzipped!
  * - Includes `Option` and `Result` types!
  * 
  * | [Github](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
@@ -46,19 +46,25 @@
  *     }
  * });
  * 
- * // Supports fallback cases and returns through match
- * const result = exampleShape.match({
+ * // supports fallback cases
+ * exampleShape.match({
  *     Square: ({width, height}) => {
  *         // runs if the shape is square
- *         return width;
  *     },
  *     _: () => {
  *         // runs if it's anything but a square
- *         return "hello"
  *     }
  * });
+ * 
+ * // Supports returns through match
+ * const result = exampleShape.match({
+ *     Empty: () => return 0;
+ *     Square: ({width, height}) => width,
+ *     _: () => false
+ * });
  * // result type is inherited from match arm return types.
- * // typeof result == number | string
+ * // typeof result == number | boolean
+ * 
  * 
  * if (exampleShape.if.Square()) {
  *     // runs if the shape is a square
@@ -113,6 +119,8 @@
  *     // only runs if myNum2 is "Ok" variant
  * }
  * ```
+ * 
+ * Keywords: "enum", "algebraic data type", "tagged union", "union", "rust enums", "rust", "option", "result", "rust enum", "rust like enum"
  * 
  * 
  * @module

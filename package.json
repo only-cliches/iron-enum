@@ -1,6 +1,6 @@
 {
   "name": "iron-enum",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Rust like enums for Typescript",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
@@ -11,5 +11,17 @@
   "license": "MIT",
   "repository": {
     "url": "https://github.com/only-cliches/iron-enum"
-  }
+  },
+  "keywords": [
+    "enum",
+    "algebraic data type",
+    "tagged union",
+    "union",
+    "rust enums",
+    "rust",
+    "option",
+    "result",
+    "rust enum",
+    "rust like enum"
+  ]
 }

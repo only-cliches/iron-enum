@@ -4,7 +4,7 @@ Finally Rust like enums in Typescript!
 
 - Ergonomic AF!
 - Fully type safe!
-- Only 600 bytes!
+- Only 400 bytes gzipped!
 - Includes `Option` and `Result` types!
 
 | [Github](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
@@ -31,32 +31,41 @@ const ShapeEnum = IronEnum<{
 
 const exampleShape = ShapeEnum.Square({width: 22, height: 50});
 
-// Supports matching
+// Supports matching, similar to switch case statements
 exampleShape.match({
+    // case Empty:
     Empty: () => {
         // runs if the shape is empty
     },
+    // case Square: 
     Square: ({width, height}) => {
         // runs if the shape is square
     },
+    // case Circle:
     Circle: ({radius}) => {
         // runs if the shape is circle
     }
 });
 
-// Supports fallback cases and returns through match
-const result = exampleShape.match({
+// supports fallback cases
+exampleShape.match({
     Square: ({width, height}) => {
         // runs if the shape is square
-        return width;
     },
     _: () => {
         // runs if it's anything but a square
-        return "hello"
     }
 });
+
+
+// Supports returns through match
+const result = exampleShape.match({
+    Empty: () => return 0;
+    Square: ({width, height}) => width,
+    _: () => false
+});
 // result type is inherited from match arm return types.
-// typeof result == number | string
+// typeof result == number | boolean
 
 if (exampleShape.if.Square()) {
     // runs if the shape is a square
