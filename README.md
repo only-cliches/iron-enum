@@ -33,7 +33,7 @@ Suppose you want an enum-like type with three variants:
 You can define these variants as follows:
 
 ```ts
-import { IronEnum } from "your-tagged-enum-library";
+import { IronEnum } from "iron-enum";
 
 type MyVariants = {
   Foo: { x: number };

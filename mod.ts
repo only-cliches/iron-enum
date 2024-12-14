@@ -34,7 +34,7 @@
  * You can define these variants as follows:
  * 
  * ```ts
- * import { IronEnum } from "your-tagged-enum-library";
+ * import { IronEnum } from "iron-enum";
  * 
  * type MyVariants = {
  *   Foo: { x: number };
@@ -109,7 +109,9 @@
  * 
  * ## License
  * 
- * This library is available under the MIT license. See the LICENSE file for details. */
+ * This library is available under the MIT license. See the LICENSE file for details. 
+ * 
+ * */
 
 
 /**
