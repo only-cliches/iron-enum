@@ -1,261 +1,158 @@
-// mod.ts
 /**
- * # Iron Enum
- * 
- * Finally Rust like enums in Typescript!
- * 
- * - Ergonomic AF!
- * - Fully type safe!
- * - Only 400 bytes gzipped!
- * - Includes `Option` and `Result` types!
- * 
- * | [Github](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
- * 
- * Typescript enums only provide simple variants:
- * ```ts
- * enum Shape {
- *     Square,
- *     Circle
- * }
- * ```
- * 
- * But what if you wanted to provide data for each variant that is context specific?  Well now you can!
- * 
- * ## Code Example
- * ```ts
- * import { IronEnum } from "iron-enum";
- * 
- * const ShapeEnum = IronEnum<{
- *     Empty: {},
- *     Square: { width: number, height: number },
- *     Circle: { radius: number }
- * }>();
- * 
- * const exampleShape = ShapeEnum.Square({width: 22, height: 50});
- * 
- * // Supports matching
- * exampleShape.match({
- *     Empty: () => {
- *         // runs if the shape is empty
- *     },
- *     Square: ({width, height}) => {
- *         // runs if the shape is square
- *     },
- *     Circle: ({radius}) => {
- *         // runs if the shape is circle
- *     }
- * });
- * 
- * // supports fallback cases
- * exampleShape.match({
- *     Square: ({width, height}) => {
- *         // runs if the shape is square
- *     },
- *     _: () => {
- *         // runs if it's anything but a square
- *     }
- * });
- * 
- * // Supports returns through match
- * const result = exampleShape.match({
- *     Empty: () => return 0;
- *     Square: ({width, height}) => width,
- *     _: () => false
- * });
- * // result type is inherited from match arm return types.
- * // typeof result == number | boolean
- * 
- * 
- * if (exampleShape.if.Square()) {
- *     // runs if the shape is a square
- * }
- * 
- * if (exampleShape.ifNot.Square()) {
- *     // runs if the shape is NOT a square
- * }
- * 
- * console.log(exampleShape.unwrap())
- * // output: ["Square", { width: 22, height: 50 }]
- * 
- * // this method will only allow ShapeEnum variants as an argument
- * const someFn = (onlyShapeEnum: typeof ShapeEnum._self.prototype) => {
- * 
- * }
- * ```
- * 
- * Just like in Rust, the `.match(...)` keys *must* contain a callback for each variant OR provide a fallback method with a `_` property.  Failing this constraint leads to a type error.
- * 
- * ## Option & Result Examples
- * ```ts
- * import { Option, Result } from "iron-enum";
- * 
- * const NumOption = Option<number>();
- * 
- * const myNum = NumOption.Some(22);
- * 
- * myNum.match({
- *     Some: (num) => {
- *         // only runs if myNum is "Some" variant
- *     },
- *     None: () => {
- *         // only runs if myNum is "None" variant
- *     }
- * })
- * 
- * const NumResult = Result<number, Error>();
- * 
- * const myNum2 = NumResult.Ok(22);
- * 
- * myNum2.match({
- *     Ok: (num) => {
- *         // only runs if myNum2 is "Ok" variant
- *     },
- *     Err: () => {
- *         // only runs if myNum2 is "Err" variant
- *     }
- * })
- * 
- * if (myNum2.if.Ok()) {
- *     // only runs if myNum2 is "Ok" variant
- * }
- * ```
- * 
- * Keywords: "enum", "algebraic data type", "tagged union", "union", "rust enums", "rust", "option", "result", "rust enum", "rust like enum"
- * 
- * 
- * @module
+ * Removes optional modifiers from properties.
  */
-
 type NonOptional<T> = {
     [K in keyof T]-?: T[K]
-}
+};
 
+/**
+ * Converts an object type into a union of `[key, value]` tuples.
+ * If a variant's value type is `undefined` or `null`, we treat it as `[key, undefined]`.
+ */
 type ObjectToTuple<T> = {
-    [K in keyof T]: readonly [K, keyof T[K] extends never ? undefined : T[K]];
+    [K in keyof T]: T[K] extends undefined | null ? [K, undefined] : [K, T[K]]
 }[keyof T];
 
-type ObjectToFunctionMap<T> = {
-    [K in keyof T]?: keyof T[K] extends never ? () => any : (args: T[K]) => any;
+/**
+ * Base type for converting object properties into functions.
+ * If the property type is `undefined` or `null`, the function takes no arguments,
+ * otherwise it takes the property's type as an argument.
+ */
+type ObjectToFunctionMapBase<T, R> = {
+    [K in keyof T]?: T[K] extends undefined | null ? () => R : (args: T[K]) => R;
 };
 
-type ObjectToFunctionMapAsync<T> = {
-    [K in keyof T]?: keyof T[K] extends never ? () => Promise<any> : (args: T[K]) => Promise<any>;
+type ObjectToFunctionMap<T> = ObjectToFunctionMapBase<T, any>;
+type ObjectToFunctionMapAsync<T> = ObjectToFunctionMapBase<T, Promise<any>>;
+
+/**
+ * For pattern matching, we either have a fully specified map of functions (no optional fields)
+ * or a map of functions plus a catch-all `_` function.
+ */
+type MatchFns<X extends { [key: string]: any }> =
+    NonOptional<ObjectToFunctionMap<X>> |
+    (ObjectToFunctionMap<X> & { _: () => any });
+
+type MatchFnsAsync<X extends { [key: string]: any }> =
+    NonOptional<ObjectToFunctionMapAsync<X>> |
+    (ObjectToFunctionMapAsync<X> & { _: () => Promise<any> });
+
+/**
+ * Converts an object defining variants into a "builder map".
+ * Each property is a function that constructs an enum value for that variant.
+ */
+type ObjectToBuilderMap<VARIANTS extends { [key: string]: any }> = {
+    [K in keyof VARIANTS]:
+    VARIANTS[K] extends undefined | null
+    ? () => ReturnType<typeof __enumFactory<VARIANTS>>
+    : (args: VARIANTS[K]) => ReturnType<typeof __enumFactory<VARIANTS>>;
 };
 
-type MatchFns<X extends { [key: string]: any }> = NonOptional<ObjectToFunctionMap<X>> | (ObjectToFunctionMap<X> & { _: () => any });
-type MatchFnsAsync<X extends { [key: string]: any }> = NonOptional<ObjectToFunctionMapAsync<X>> | (ObjectToFunctionMapAsync<X> & { _: () => Promise<any> });
-
-type ObjectToBuidlerMap<VARIANTS extends { [key: string]: any }> = {
-    [K in keyof VARIANTS]: keyof VARIANTS[K] extends never ? () => EnumGenerator<VARIANTS> : (args: VARIANTS[K]) => EnumGenerator<VARIANTS>;
-};
-
+/**
+ * `if` logic map: If the variant is empty (undefined), callback takes no args,
+ * otherwise, it takes the variant data.
+ */
 type ObjectToIfMap<T> = {
-    [K in keyof T]: keyof T[K] extends never ? <X = boolean>(callback?: () => X) => (X extends boolean ? X : X | void) : <X = boolean>(callback?: (arg: T[K]) => X) => (X extends boolean ? X : X | void);
+    [K in keyof T]:
+    T[K] extends undefined | null
+    ? <X = boolean>(callback?: () => X) => X | boolean
+    : <X = boolean>(callback?: (arg: T[K]) => X) => X | boolean;
 };
 
+/**
+ * `ifNot` logic map: Always takes a callback with no arguments.
+ */
 type ObjectToIfNotMap<T> = {
-    [K in keyof T]: <X = boolean>(callback?: () => X) => (X extends boolean ? X : X | void);
+    [K in keyof T]: <X = boolean>(callback?: () => X) => X | boolean;
 };
 
 /**
- * Enum generator class
+ * Creates a tagged enum value factory. Given a `[tag, value]` tuple,
+ * returns an object with utilities for pattern matching and conditional checks.
  */
-class EnumGenerator<VARIANTS extends { [key: string]: any }> {
+export const __enumFactory = <VARIANTS extends { [key: string]: any }>(value: ObjectToTuple<VARIANTS>) => {
+    const [tag, data] = value;
 
-    private readonly __: ObjectToTuple<VARIANTS>;
+    return {
+        /**
+         * Unwrap to get the original [tag, value] tuple.
+         */
+        unwrap: () => value,
 
-    /**
-     * 
-     * @param value 
-     */
-    constructor(value: ObjectToTuple<VARIANTS>) {
-        this.__ = value;
-    }
-
-    /**
-     * 
-     * @returns 
-     */
-    public unwrap(): ObjectToTuple<VARIANTS> {
-        return this.__;
-    }
-
-    /**
-     * 
-     */
-    public if = new Proxy({}, {
-        get: (tgt, prop, rcv) => {
-            return (callback: any) => {
-                if (prop == this.__[0]) {
-                    if (callback) {
-                        return callback(this.__[1]);
+        /**
+         * `if` proxy: Check if the current variant matches a given tag.
+         * If it does, call the provided callback (if any) or return true.
+         * Otherwise, return false.
+         */
+        if: new Proxy({} as ObjectToIfMap<VARIANTS>, {
+            get: (_tgt, prop: string) => {
+                return (callback?: Function) => {
+                    if (prop === tag) {
+                        return callback ? callback(data) : true;
                     }
-                    return true;
-                }
-                return false;
+                    return false;
+                };
             }
-        }
-    }) as ObjectToIfMap<VARIANTS>
+        }),
 
-    /**
-     * 
-     */
-    public ifNot = new Proxy({}, {
-        get: (tgt, prop, rcv) => {
-            return (callback: any) => {
-                if (prop != this.__[0]) {
-                    if (callback) return callback()
-                    return true;
-                }
-                return false;
+        /**
+         * `ifNot` proxy: Check if the current variant is NOT a given tag.
+         * If it isn't that tag, call the callback (if any) or return true.
+         * Otherwise, return false.
+         */
+        ifNot: new Proxy({} as ObjectToIfNotMap<VARIANTS>, {
+            get: (_tgt, prop: string) => {
+                return (callback?: Function) => {
+                    if (prop !== tag) {
+                        return callback ? callback() : true;
+                    }
+                    return false;
+                };
             }
+        }),
+
+        /**
+         * `match`: Pattern match against the current variant.
+         * If a matching key is found, call its callback.
+         * Otherwise, if `_` is defined, call it.
+         */
+        match: <A extends MatchFns<VARIANTS>>(callbacks: A) => {
+            const maybeCall = callbacks[tag];
+            if (maybeCall) {
+                return (maybeCall as Function)(data);
+            }
+            const catchCall = callbacks._;
+            if (catchCall) return catchCall(undefined as any);
+            return undefined;
+        },
+
+        /**
+         * `matchAsync`: Like `match`, but all callbacks are async.
+         */
+        matchAsync: async <A extends MatchFnsAsync<VARIANTS>>(callbacks: A) => {
+            const maybeCall = callbacks[tag];
+            if (maybeCall) {
+                return await (maybeCall as Function)(data);
+            }
+            const catchCall = callbacks._;
+            if (catchCall) return await catchCall(undefined as any);
+            return undefined;
         }
-    }) as ObjectToIfNotMap<VARIANTS>
-
-    /**
-     * 
-     * @param callbacks 
-     * @returns 
-     */
-    public match<A extends MatchFns<VARIANTS>>(callbacks: A): { [K in keyof A]: A[K] extends (...args: any) => any ? ReturnType<A[K]> : A[K] }[keyof A] | undefined {
-        const maybeCall = callbacks[this.__[0]];
-        if (maybeCall) return maybeCall(this.__[1] as any);
-        const catchCall = callbacks._ as () => any;
-        if (catchCall) return catchCall();
-    }
-
-    /**
-     * 
-     * @param callbacks 
-     * @returns 
-     */
-    public async matchAsync<A extends MatchFnsAsync<VARIANTS>>(callbacks: A): Promise<{ [K in keyof A]: A[K] extends (...args: any) => Promise<any> ? Awaited<ReturnType<A[K]>> : A[K] }[keyof A] | undefined> {
-        const maybeCall = callbacks[this.__[0]];
-        if (maybeCall) return await maybeCall(this.__[1] as any);
-        const catchCall = callbacks._ as () => Promise<any>;
-        if (catchCall) return await catchCall();
-    }
-}
-
-
-
+    };
+};
 
 /**
- * Create a type syfe enum
- *
+ * `IronEnum` factory: Creates a proxy that provides builder functions
+ * for each variant. Accessing `MyEnum.Variant` returns a function that,
+ * when called with arguments, returns an enum instance (from `__enumFactory`).
  */
-
-export function IronEnum<VARIANTS extends { [key: string]: any }>(): ObjectToBuidlerMap<VARIANTS> & {_self: typeof EnumGenerator<VARIANTS> } {
-
+export const IronEnum = <VARIANTS extends { [key: string]: any }>() => {
     return new Proxy({}, {
-        get: (tgt, prop, rcv) => {
-            if (prop == "_self") return EnumGenerator<VARIANTS>;
-            return (args: any) => {
-                return new EnumGenerator<VARIANTS>([prop, args] as any);
-            }
+        get: (_tgt, prop: string) => {
+            return (args: any) => __enumFactory<VARIANTS>([prop, args] as any);
         }
-    }) as any;
-}
+    }) as ObjectToBuilderMap<VARIANTS> & { typeOf: ReturnType<typeof __enumFactory<VARIANTS>> };
+};
 
 /**
  * Option type, usage:
@@ -268,9 +165,9 @@ export function IronEnum<VARIANTS extends { [key: string]: any }>(): ObjectToBui
  * 
  * @returns IronEnum<{Some: T, None}>
  */
-export const Option = <T>(): ReturnType<typeof IronEnum<{None: {}, Some: T}>> => IronEnum<{
-    None: {},
-    Some: T
+export const Option = <T>() => IronEnum<{
+    Some: T,
+    None: undefined
 }>()
 
 
@@ -284,7 +181,7 @@ export const Option = <T>(): ReturnType<typeof IronEnum<{None: {}, Some: T}>> =>
  * 
  * @returns IronEnum<{Ok: T, Err: E}>
  */
-export const Result = <T, E>(): ReturnType<typeof IronEnum<{Ok: T, Err: E}>> => IronEnum<{
+export const Result = <T, E>() => IronEnum<{
     Ok: T,
     Err: E
 }>()
