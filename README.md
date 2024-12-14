@@ -1,6 +1,6 @@
 # Iron Enum
 
-**Iron Enum** is a lightweight library that brings powerful, type-safe, runtime "tagged enums" (also known as "algebraic data types" or "discriminated unions") to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures — without needing complex pattern-matching libraries or large frameworks.
+**Iron Enum** is a lightweight library that brings [Rust like](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html) powerful, type-safe, runtime "tagged enums" (also known as "algebraic data types" or "discriminated unions") to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures — without needing complex pattern-matching libraries or large frameworks.
 
 | [Github](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
 
@@ -128,6 +128,33 @@ const testValue = simpleEnum.foo({text: "hello"});
 const unwrapped = testValue.unwrap();
 ```
 
+## Option & Result
+The library contains straightforward implmentations of Rust's `Option` and `Result` types.
+```ts
+import { Option, Result } from "iron-enum";
+
+const myResult = Result<{Ok: boolean, Err: string}>();
+
+const ok = myResult.Ok(true);
+ok.match({
+  Ok: (value) => {
+   console.log(value) // true;
+  },
+  _: () => { /* .. */ }
+});
+
+const myOption = Option<number>();
+
+const optNum = myOption.Some(22);
+
+optNum.match({
+  Some: (val) => {
+    console.log(val) // 22;
+  },
+  None: () => { /* .. */ }
+})
+
+```
 
 ## Contributing
 
