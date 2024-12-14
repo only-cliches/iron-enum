@@ -1,6 +1,6 @@
-# Iron Enum for TypeScript
+# Iron Enum
 
-**Iron Enum** is a lightweight library that brings powerful, type-safe, runtime "tagged enums" (also known as "algebraic data types" or "discriminated unions") to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures—without needing complex pattern-matching libraries or large frameworks.
+**Iron Enum** is a lightweight library that brings powerful, type-safe, runtime "tagged enums" (also known as "algebraic data types" or "discriminated unions") to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures — without needing complex pattern-matching libraries or large frameworks.
 
 | [Github](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
 
@@ -11,7 +11,6 @@
 - **Pattern Matching:** Convenient `match` and `matchAsync` methods allow you to handle each variant in a type-safe manner, including a default `_` fallback.
 - **Conditional Checks:** Intuitive `if` and `ifNot` methods let you easily check which variant you’re dealing with and optionally run callbacks.
 - **Supports "Empty" Variants:** Variants can be defined without associated data (using `undefined`), making it easy to represent states like "None" or "Empty."
-- **Asynchronous Patterns:** The `matchAsync` method lets you handle async operations within pattern matches, integrating seamlessly with `async/await`.
 - **Reduced Boilerplate:** No need to write large switch statements or manually check discriminant fields—simply define variants and let the library handle the rest.
 
 ## Why Use This Library?
@@ -28,7 +27,7 @@
 Suppose you want an enum-like type with three variants:
 - Foo contains an object with an x field.
 - Bar contains a string.
-- Empty contains no data (use undefined).
+- Empty contains no data.
 
 You can define these variants as follows:
 
@@ -58,7 +57,7 @@ Each call returns a tagged object with methods to inspect or match the variant.
 Use match to handle each variant:
 ```ts
 fooValue.match({
-  Foo: (val) => console.log("Foo with:", val.x), // val is { x: number }
+  Foo: (val) => console.log("Foo with:", val), // val is { x: number }
   Bar: (val) => console.log("Bar with:", val),
   Empty: () => console.log("It's empty"),
   _: () => console.log("No match") // Optional fallback
@@ -71,14 +70,26 @@ You can quickly check the current variant with if and ifNot:
 
 ```ts
 // If the variant is Foo, log a message and return true; otherwise return false.
-const isFoo = fooValue.if.Foo((val) => {
+const isFoo: boolean = fooValue.if.Foo((val) => {
   console.log("Yes, it's Foo with x =", val.x);
 });
 
 // If the variant is not Bar, log a message; if it is Bar, return false.
-const notBar = fooValue.ifNot.Bar(() => {
+const notBar: boolean = fooValue.ifNot.Bar(() => {
   console.log("This is definitely not Bar!");
 });
+
+// Values can be returned through the function and will be inferred.
+// The type for `notBar` will be inferred as "boolean | string".
+const notBar = fooValue.ifNot.Bar(() => {
+  console.log("This is definitely not Bar!");
+  return "not bar for sure";
+});
+
+// Callback is optional, useful for if statements
+if(fooValue.ifNot.Bar()) {
+  // not bar 
+}
 ```
 Both methods return a boolean or the callback result, making conditional logic concise and expressive.
 
@@ -101,6 +112,22 @@ console.log("Async match result:", matchedResult);
 
 ```
 The matchAsync method returns a Promise that resolves with the callback’s return value.
+
+### Unwrapping
+In the event that you need to access the data directly, you can use the unwrap method.
+
+```ts
+const simpleEnum = IronEnum<{
+  foo: { text: string },
+  bar: { title: string }
+}>();
+
+const testValue = simpleEnum.foo({text: "hello"});
+
+// typeof unwrapped = ["foo", {text: string}] | ["bar", {title: string}]
+const unwrapped = testValue.unwrap();
+```
+
 
 ## Contributing
 

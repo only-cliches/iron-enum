@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "minify": "npx terser dist/mod.js --compress --mangle --output dist/mod.min.js",
     "size": "gzip -c dist/mod.min.js | wc -c",
-    "readme": "(echo \"/**\"; sed 's/^/ * /' README.md; echo \" */\") | cat - mod.ts > temp && mv temp mod.ts"
+    "readme": "(echo \"/**\"; sed 's/^/ * /' README.md | sed 's/^/ * /'; echo \" */\n\n\") | cat - mod.ts > temp && mv temp mod.ts"
   },
   "author": "Scott Lott <me@scottlott.com>",
   "license": "MIT",
