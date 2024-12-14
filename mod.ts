@@ -239,7 +239,13 @@ type ObjectToIfNotMap<T> = {
  * Creates a tagged enum value factory. Given a `[tag, value]` tuple,
  * returns an object with utilities for pattern matching and conditional checks.
  */
-const enumFactory = <VARIANTS extends { [key: string]: any }>(value: ObjectToTuple<VARIANTS>) => {
+const enumFactory = <VARIANTS extends { [key: string]: any }>(value: ObjectToTuple<VARIANTS>): {
+    unwrap: () => ObjectToTuple<VARIANTS>,
+    if: ObjectToIfMap<VARIANTS>,
+    ifNot: ObjectToIfNotMap<VARIANTS>,
+    match: <A extends MatchFns<VARIANTS>>(callbacks: A) => any,
+    matchAsync: <A extends MatchFnsAsync<VARIANTS>>(callbacks: A) => Promise<any>
+} => {
     const [tag, data] = value;
 
     return {
