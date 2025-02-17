@@ -92,4 +92,56 @@ describe('IronEnum', () => {
     });
     expect(result).toBe('async fallback');
   });
+
+  test("toJSON and fromJSON work as expected", async () => {
+    const fooValue = MyEnum.Foo({ x: 99 });
+    const fooJSON = fooValue.toJSON();
+    const parsedFoo = MyEnum.fromJSON(fooJSON);
+    
+    const result = parsedFoo.if.Foo((args) => {
+      expect(args.x).toBe(99);
+      return "hello";
+    }, (value) => {
+      expect(true).toBe(false);
+      return 22;
+    })
+
+  })
+
+  test("ifElse to work as expected", async () => {
+    const fooValue = MyEnum.Foo({ x: 99 });
+    const fooJSON = fooValue.toJSON();
+    const parsedFoo = MyEnum.fromJSON(fooJSON);
+    
+    parsedFoo.if.Foo((args) => {
+      expect(args.x).toBe(99);
+    }, (value) => {
+      fail();
+    })
+
+    const result1 = parsedFoo.if.Foo((args) => {
+      return args.x;
+    }, (value) => {
+      return value;
+    })
+
+    expect(result1).toBe(99);
+
+    const result2 = parsedFoo.ifNot.Bar((unwrapValue) => {
+      return unwrapValue
+    }, (unwrapValue) => {
+      return 22;
+    })
+
+    expect(result2).toMatchObject(["Foo", {x:99}]);
+
+    const result3 = parsedFoo.ifNot.Foo((unwrapValue) => {
+      return unwrapValue
+    }, (value) => {
+      return false;
+    })
+
+    expect(result3).toBe(false);
+
+  })
 });

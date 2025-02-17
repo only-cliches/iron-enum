@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.2.0 Feb 16, 2025
+- Fixed type flow throug `match` and `matchAsync` methods.
+- added `toJSON` and `fromJSON` methods for handling standard JSON objects.
+- Added `if else` callbacks to conditional functions.
+- Improved error handling.
+
 ## 1.1.2 - Dec 14, 2024
 - Minor rewrite, public API did not change.
 - Improved code comments and clarity.

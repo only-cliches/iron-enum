@@ -1,6 +1,6 @@
 {
   "name": "iron-enum",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Rust like enums for Typescript",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
@@ -31,5 +31,6 @@
     "@types/jest": "^29.5.14",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5"
-  }
+  },
+  "dependencies": {}
 }

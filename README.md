@@ -6,7 +6,7 @@
 
 ## Features
 
-- **Lightweight and Zero-Dependencies:** A minimal implementation (only 400 bytes!) that relies solely on TypeScript’s advanced type system and the ES6 `Proxy` object.
+- **Lightweight and Zero-Dependencies:** A minimal implementation (only 650 bytes!) that relies solely on TypeScript’s advanced type system and the ES6 `Proxy` object.
 - **Type-Safe Tagged Variants:** Each variant is created with a unique tag and associated data, which TypeScript can strongly type-check at compile time.
 - **Pattern Matching:** Convenient `match` and `matchAsync` methods allow you to handle each variant in a type-safe manner, including a default `_` fallback.
 - **Conditional Checks:** Intuitive `if` and `ifNot` methods let you easily check which variant you’re dealing with and optionally run callbacks.
@@ -70,21 +70,32 @@ You can quickly check the current variant with if and ifNot:
 
 ```ts
 // If the variant is Foo, log a message and return true; otherwise return false.
-const isFoo: boolean = fooValue.if.Foo((val) => {
+// typeof isFoo == boolean
+const isFoo = fooValue.if.Foo((val) => {
   console.log("Yes, it's Foo with x =", val.x);
 });
 
 // If the variant is not Bar, log a message; if it is Bar, return false.
-const notBar: boolean = fooValue.ifNot.Bar(() => {
+// typeof notBar == boolean
+const notBar = fooValue.ifNot.Bar(() => {
   console.log("This is definitely not Bar!");
 });
 
 // Values can be returned through the function and will be inferred.
-// The type for `notBar` will be inferred as "boolean | string".
+// typeof notBar == string
 const notBar = fooValue.ifNot.Bar(() => {
   console.log("This is definitely not Bar!");
   return "not bar for sure";
 });
+
+// A second callback can be used for else conditions for both .if and .ifNot:
+// Return types are inferred, without return types in the functions the default return is boolean.
+// typeof isFooElse == string | number;
+const isFooElse = fooValue.if.Bar((barValue) => {
+  return barValue;
+}, (unwrapResult) => {
+  return 0;
+})
 
 // Callback is optional, useful for if statements
 if(fooValue.ifNot.Bar()) {
