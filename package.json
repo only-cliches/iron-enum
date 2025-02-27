@@ -1,12 +1,13 @@
 {
   "name": "iron-enum",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Rust like enums for Typescript",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
   "scripts": {
     "test": "jest",
     "minify": "npx terser dist/mod.js --compress --mangle --output dist/mod.min.js",
+    "build": "tsc",
     "size": "gzip -c dist/mod.min.js | wc -c",
     "readme": "(echo \"/**\"; sed 's|\\*/|*\\\\/|g' README.md | sed 's/^/ * /'; echo \"\n * */\n\n\") | cat - mod.ts > temp && mv temp mod.ts"
   },

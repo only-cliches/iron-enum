@@ -6,7 +6,7 @@
 
 ## Features
 
-- **Lightweight and Zero-Dependencies:** A minimal implementation (only 650 bytes!) that relies solely on TypeScript’s advanced type system and the ES6 `Proxy` object.
+- **Lightweight and Zero-Dependencies:** A minimal implementation (only 650 bytes!) that leverages TypeScript’s advanced type system and the ES6 `Proxy` object.
 - **Type-Safe Tagged Variants:** Each variant is created with a unique tag and associated data, which TypeScript can strongly type-check at compile time.
 - **Pattern Matching:** Convenient `match` and `matchAsync` methods allow you to handle each variant in a type-safe manner, including a default `_` fallback.
 - **Conditional Checks:** Intuitive `if` and `ifNot` methods let you easily check which variant you’re dealing with and optionally run callbacks.
@@ -137,6 +137,24 @@ const testValue = simpleEnum.foo({text: "hello"});
 
 // typeof unwrapped = ["foo", {text: string}] | ["bar", {title: string}]
 const unwrapped = testValue.unwrap();
+```
+
+### Classese and nesting
+Enums can contain classes, objects or even other enums.
+```ts
+const testEnum = IronEnum<{foo: string, bar: string}>();
+class SimpleClass { /* .. */ }
+
+const complexEnum = IronEnum<{
+  test: typeof testEnum.typeOf,
+  aClass: typeof SimpleClass,
+  nested: {
+    foo: string,
+    bar: string,
+    test: typeof testEnum.typeOf,
+    array: {someProperty: string, anotherProperty: number}[]
+  }
+}>();
 ```
 
 ## Option & Result
