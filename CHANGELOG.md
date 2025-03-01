@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.0 Mar 1, 2025
+- Updated internal handling of values, including return type of `unwrap`.
+- Renamed `fromJSON` to `parse`.
+- Removed `toJSON` method as it's no identical to `unwrap` method.
+
 ## 1.2.1 Feb 27, 2025
 - Optional keys in the variant type are now supported.
 - Added type to extract variants from IronEnum object.

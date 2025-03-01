@@ -12,13 +12,13 @@ const MyEnum = IronEnum<MyVariants>();
 describe('IronEnum', () => {
   test('creates variants with correct tags and values', () => {
     const fooValue = MyEnum.Foo({ x: 42 });
-    expect(fooValue.unwrap()).toEqual(['Foo', { x: 42 }]);
+    expect(fooValue.unwrap()).toEqual({'Foo': { x: 42 }});
 
     const barValue = MyEnum.Bar('hello');
-    expect(barValue.unwrap()).toEqual(['Bar', 'hello']);
+    expect(barValue.unwrap()).toEqual({'Bar': 'hello'});
 
     const emptyValue = MyEnum.Empty();
-    expect(emptyValue.unwrap()).toEqual(['Empty', undefined]);
+    expect(emptyValue.unwrap()).toEqual({'Empty': undefined});
   });
 
   test('match calls the correct callback for a variant', () => {
@@ -93,10 +93,10 @@ describe('IronEnum', () => {
     expect(result).toBe('async fallback');
   });
 
-  test("toJSON and fromJSON work as expected", async () => {
+  test("unwrap and parse work as expected", async () => {
     const fooValue = MyEnum.Foo({ x: 99 });
-    const fooJSON = fooValue.toJSON();
-    const parsedFoo = MyEnum.fromJSON(fooJSON);
+    const fooJSON = fooValue.unwrap();
+    const parsedFoo = MyEnum.parse(fooJSON);
     
     const result = parsedFoo.if.Foo((args) => {
       expect(args.x).toBe(99);
@@ -110,8 +110,8 @@ describe('IronEnum', () => {
 
   test("ifElse to work as expected", async () => {
     const fooValue = MyEnum.Foo({ x: 99 });
-    const fooJSON = fooValue.toJSON();
-    const parsedFoo = MyEnum.fromJSON(fooJSON);
+    const fooJSON = fooValue.unwrap();
+    const parsedFoo = MyEnum.parse(fooJSON);
     
     parsedFoo.if.Foo((args) => {
       expect(args.x).toBe(99);
@@ -133,7 +133,7 @@ describe('IronEnum', () => {
       return 22;
     })
 
-    expect(result2).toMatchObject(["Foo", {x:99}]);
+    expect(result2).toMatchObject({Foo: {x:99}});
 
     const result3 = parsedFoo.ifNot.Foo((unwrapValue) => {
       return unwrapValue
