@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.1 Mar 6, 2025
+- Removed `ExtractVariants` type and added `typeVariants` property to the `IronEnum` constructor function.
+- Added `typeKeys` property.
+
 ## 1.3.0 Mar 1, 2025
 - Updated internal handling of values, including return type of `unwrap`.
 - Renamed `fromJSON` to `parse`.
