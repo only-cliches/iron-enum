@@ -140,6 +140,21 @@ const unwrapped = testValue.unwrap();
 console.log(unwrapped) // {foo: {text: "hello"}}
 ```
 
+### Serialization & Deserialization
+```ts
+const simpleEnum = IronEnum<{
+  foo: { text: string },
+  bar: { title: string }
+}>();
+
+const testValue = simpleEnum.foo({text: "hello"});
+
+const jsonValue = testValue.unwrap();
+// jsonValue can be sent across any interface that supports JSON.
+const parsedvalue = simpleEnum.parse(jsonValue);
+// parseValue is now an `simpleEnum` type.
+```
+
 ### Classese and nesting
 Enums can contain classes, objects or even other enums.
 ```ts

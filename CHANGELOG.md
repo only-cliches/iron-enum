@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.2 Mar 16, 2025
+- Added new exported type `EnumFactory`.
+- Fixed typing errors on `if` and `ifNot` callbacks.
+- Added serialization and seserialization to readme.
+
 ## 1.3.1 Mar 6, 2025
 - Removed `ExtractVariants` type and added `typeVariants` property to the `IronEnum` constructor function.
 - Added `typeKeys` property.

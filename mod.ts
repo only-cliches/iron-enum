@@ -1,5 +1,4 @@
 
-
 /**
  * Removes optional modifiers from properties.
  */
@@ -54,7 +53,7 @@ type IfFnNull<T extends { [key: string]: any }> = <
     RElse = void
 >(
     ifCallback?: () => RIf,
-    elseCallback?: (obj: T) => RElse
+    elseCallback?: (obj: Partial<T>) => RElse
 ) => [RIf, RElse] extends [void, void]
     ? boolean
     : (RIf extends void ? boolean | ExcludeVoid<RElse> : (RElse extends void ? boolean | ExcludeVoid<RIf> : ExcludeVoid<RElse> | ExcludeVoid<RIf>))
@@ -69,7 +68,7 @@ type IfFnArg<TValue, T extends { [key: string]: any }> = <
     RElse = void
 >(
     ifCallback?: (val: TValue) => RIf,
-    elseCallback?: (unwrapValue: T) => RElse
+    elseCallback?: (unwrapValue: Partial<T>) => RElse
 ) => [RIf, RElse] extends [void, void]
     ? boolean
     : RIf extends void
@@ -96,8 +95,8 @@ type IfNotFn<TAll> = <
     RIf = void,
     RElse = void
 >(
-    callback?: (unwrapValue: TAll) => RIf,
-    elseCallback?: (unwrapValue: TAll) => RElse
+    callback?: (unwrapValue: Partial<TAll>) => RIf,
+    elseCallback?: (unwrapValue: Partial<TAll>) => RElse
 ) => [RIf, RElse] extends [void, void]
 ? boolean
 : RIf extends void
@@ -115,11 +114,7 @@ type ObjectKeys<T> = {
 }[keyof T];
 
 
-/**
- * Creates a tagged enum value factory. Given a `[tag, value]` tuple,
- * returns an object with utilities for pattern matching and conditional checks.
- */
-const enumFactory = <VARIANTS extends { [varaintKey: string]: any }>(value: Partial<VARIANTS>): {
+export type EnumFactory<VARIANTS extends { [varaintKey: string]: any }> = {
     /**
      * Unwrap to get the underlying value of the tuple
      */
@@ -152,7 +147,14 @@ const enumFactory = <VARIANTS extends { [varaintKey: string]: any }>(value: Part
      * Return types for each callback flow to the top return type for this method.
      */
     matchAsync: <A extends MatchFnsAsync<VARIANTS>>(callbacks: A) => Promise<{ [K in keyof A]: A[K] extends (...args: any) => Promise<any> ? Awaited<ReturnType<A[K]>> : A[K] }[keyof A] | undefined>
-} => {
+};
+
+
+/**
+ * Creates a tagged enum value factory. Given a `[tag, value]` tuple,
+ * returns an object with utilities for pattern matching and conditional checks.
+ */
+const enumFactory = <VARIANTS extends { [varaintKey: string]: any }>(value: Partial<VARIANTS>): EnumFactory<VARIANTS>  => {
     const tag = Object.keys(value).pop() || "";
     const data = value[tag];
 
@@ -317,3 +319,4 @@ export const Result = <T, E>(): ReturnType<typeof IronEnum<{ Ok: T, Err: E }>> =
     Ok: T,
     Err: E
 }>()
+
