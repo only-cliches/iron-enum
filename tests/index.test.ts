@@ -1,4 +1,4 @@
-import { IronEnum } from '../mod'; // Adjust path as needed
+import { IronEnum, EnumFactory, EnumBuilder } from '../mod'; // Adjust path as needed
 
 // Define a sample set of variants
 type MyVariants = {
@@ -8,6 +8,15 @@ type MyVariants = {
 };
 
 const MyEnum = IronEnum<MyVariants>();
+
+const fooValue = MyEnum.Foo({ x: 42 });
+// const testFn = (accepts: typeof MyEnum["_"]["typeOf"]) => {}
+// testFn(fooValue);
+
+type InferFooDataType<X extends typeof MyEnum["_"]["typeOf"]> = X extends {tag: "Foo", data: infer Y} ? Y : void;
+
+type ff = InferFooDataType<typeof fooValue>;
+
 
 describe('IronEnum', () => {
   test('creates variants with correct tags and values', () => {
@@ -96,7 +105,7 @@ describe('IronEnum', () => {
   test("unwrap and parse work as expected", async () => {
     const fooValue = MyEnum.Foo({ x: 99 });
     const fooJSON = fooValue.unwrap();
-    const parsedFoo = MyEnum.parse(fooJSON);
+    const parsedFoo = MyEnum._.parse(fooJSON);
     
     const result = parsedFoo.if.Foo((args) => {
       expect(args.x).toBe(99);
@@ -111,7 +120,7 @@ describe('IronEnum', () => {
   test("ifElse to work as expected", async () => {
     const fooValue = MyEnum.Foo({ x: 99 });
     const fooJSON = fooValue.unwrap();
-    const parsedFoo = MyEnum.parse(fooJSON);
+    const parsedFoo = MyEnum._.parse(fooJSON);
     
     parsedFoo.if.Foo((args) => {
       expect(args.x).toBe(99);

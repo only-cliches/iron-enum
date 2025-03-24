@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.4
+- Complete rewrite to improve type inference.
+- You can no longer pass a `_` variant key to the constructor.
+- Moved 'parse" and other enum properties to `_` key.
+
 ## 1.3.2 Mar 16, 2025
 - Added new exported type `EnumFactory`.
 - Fixed typing errors on `if` and `ifNot` callbacks.

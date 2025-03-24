@@ -1,54 +1,108 @@
+/**
+ * A record of possible variants, each key mapping to its associated data type.
+ * Example: { Some: T, None: undefined } or { Foo: string, Bar: number }.
+ */
+export type VariantsRecord = {
+    [K in Exclude<string, "_">]: any;
+};
+
+
 
 /**
- * Removes optional modifiers from properties.
+ * Represents a single constructed enum value.
+ * 
+ * - `tag` is the literal name of the variant.
+ * - `payload` is the data associated with this variant (could be undefined).
+ * - It intersects with all of the enum methods (`EnumMethods`).
+ * 
+ * Generics:
+ * - TAG: the specific variant key.
+ * - PAYLOAD: the associated data type for this key.
+ * - ALL: the entire VariantsRecord for reference by the methods.
+ */
+export type EnumFactory<
+    TAG extends keyof ALL & string,
+    PAYLOAD,
+    ALL extends VariantsRecord
+> = {
+    tag: TAG;
+    data: PAYLOAD;
+} & EnumMethods<ALL>;
+
+/**
+ * A set of methods made available to every constructed enum value:
+ * - `unwrap`: Returns a plain object with exactly one key/value corresponding to the current variant.
+ * - `key`: Returns the variant key.
+ * - `if` and `ifNot`: Provide conditional checks against a specific variant.
+ * - `match`: Synchronously pattern-match on the variant key.
+ * - `matchAsync`: Asynchronously pattern-match on the variant key.
+ */
+export interface EnumMethods<ALL extends VariantsRecord> {
+    unwrap: () => Partial<ALL>;
+    key: () => keyof ALL & string;
+    if: ObjectToIfMap<ALL>;
+    ifNot: ObjectToIfNotMap<ALL>;
+    match: <A extends MatchFns<ALL>>(
+        callbacks: A
+    ) => MatchResult<A>;
+    matchAsync: <A extends MatchFnsAsync<ALL>>(
+        callbacks: A
+    ) => Promise<MatchResult<A>>;
+}
+
+/**
+ * Removes optional modifiers from properties of an object type.
  */
 type NonOptional<T> = {
-    [K in keyof T]-?: T[K]
+    [K in keyof T]-?: T[K];
 };
 
 /**
- * Base type for converting object properties into functions.
- * If the property type is `undefined` or `null`, the function takes no arguments,
- * otherwise it takes the property's type as an argument.
+ * Base type for converting an object's properties into functions that return a generic result type (R).
+ * If the property type is null/undefined, the function takes no arguments; otherwise it takes that type as an argument.
  */
 type ObjectToFunctionMapBase<T, R> = {
-    [K in keyof T]?: T[K] extends undefined | null ? () => R : (args: T[K]) => R;
+    [K in keyof T]?: T[K] extends undefined | null
+    ? () => R
+    : (args: T[K]) => R;
 };
 
+/**
+ * Converts an object's properties into functions returning any.
+ */
 type ObjectToFunctionMap<T> = ObjectToFunctionMapBase<T, any>;
+
+/**
+ * Converts an object's properties into functions returning promises.
+ */
 type ObjectToFunctionMapAsync<T> = ObjectToFunctionMapBase<T, Promise<any>>;
 
 /**
- * For pattern matching, we either have a fully specified map of functions (no optional fields)
- * or a map of functions plus a catch-all `_` function.
+ * Pattern matching map for each variant. Must specify all variant keys or have a "_" fallback.
  */
-type MatchFns<X extends { [key: string]: any }> =
-    NonOptional<ObjectToFunctionMap<X>> |
-    (ObjectToFunctionMap<X> & { _: () => any });
-
-type MatchFnsAsync<X extends { [key: string]: any }> =
-    NonOptional<ObjectToFunctionMapAsync<X>> |
-    (ObjectToFunctionMapAsync<X> & { _: () => Promise<any> });
+type MatchFns<X extends VariantsRecord> =
+    | NonOptional<ObjectToFunctionMap<X>>
+    | (ObjectToFunctionMap<X> & { _: () => any });
 
 /**
- * Converts an object defining variants into a "builder map".
- * Each property is a function that constructs an enum value for that variant.
+ * Pattern matching map for each variant with async callbacks. Must specify all variant keys or have a "_" fallback.
  */
-type ObjectToBuilderMap<VARIANTS extends { [key: string]: any }> = {
-    [K in keyof VARIANTS]-?:
-    VARIANTS[K] extends undefined | null
-    ? () => ReturnType<typeof enumFactory<VARIANTS>>
-    : (args: VARIANTS[K]) => ReturnType<typeof enumFactory<VARIANTS>>;
-};
-
-type ExcludeVoid<T> = Exclude<T, void>;
+type MatchFnsAsync<X extends VariantsRecord> =
+    | NonOptional<ObjectToFunctionMapAsync<X>>
+    | (ObjectToFunctionMapAsync<X> & { _: () => Promise<any> });
 
 /**
- * If the property may be null/undefined:
- * - `ifCallback` has **no** parameter
- * - `elseCallback` receives the entire object (`ObjectToTuple<TAll>`)
+ * Derives the return type from the union of callback signatures in the map.
  */
-type IfFnNull<T extends { [key: string]: any }> = <
+type MatchResult<A> = A extends { [K: string]: (...args: any) => infer R }
+    ? R
+    : never;
+
+/**
+ * Conditional type functions for the `if` property on the constructed enum objects.
+ * These allow specifying an optional callback if the variant matches, and another if it does not.
+ */
+type IfFnNull<T extends Record<string, any>> = <
     RIf = void,
     RElse = void
 >(
@@ -56,14 +110,17 @@ type IfFnNull<T extends { [key: string]: any }> = <
     elseCallback?: (obj: Partial<T>) => RElse
 ) => [RIf, RElse] extends [void, void]
     ? boolean
-    : (RIf extends void ? boolean | ExcludeVoid<RElse> : (RElse extends void ? boolean | ExcludeVoid<RIf> : ExcludeVoid<RElse> | ExcludeVoid<RIf>))
+    : RIf extends void
+    ? boolean | Exclude<RElse, void>
+    : RElse extends void
+    ? boolean | Exclude<RIf, void>
+    : Exclude<RIf, void> | Exclude<RElse, void>;
 
 /**
- * If the property definitely has a value (not null/undefined):
- * - `ifCallback` receives `TValue`
- * - `elseCallback` receives the entire object (`ObjectToTuple<TAll>`)
+ * Similar to IfFnNull, but for properties that cannot be null/undefined.
+ * The `ifCallback` receives the unwrapped value.
  */
-type IfFnArg<TValue, T extends { [key: string]: any }> = <
+type IfFnArg<TValue, T extends Record<string, any>> = <
     RIf = void,
     RElse = void
 >(
@@ -77,19 +134,19 @@ type IfFnArg<TValue, T extends { [key: string]: any }> = <
     ? boolean | Exclude<RIf, void>
     : Exclude<RIf, void> | Exclude<RElse, void>;
 
-
-
-type ObjectToIfMap<T extends { [key: string]: any }> = {
-    [K in keyof T]:
-    T[K] extends null | undefined
+/**
+ * The object type used by the `if` property on an enum instance.
+ * Each key corresponds to a potential variant key.
+ */
+type ObjectToIfMap<T extends Record<string, any>> = {
+    [K in keyof T]: T[K] extends null | undefined
     ? IfFnNull<T>
     : IfFnArg<T[K], T>;
 };
 
 /**
- * "IfNot" logic:
- * - The first callback recieves unwrapped value
- * - The second callback recieves unwrapped value
+ * `ifNot` logic for handling the inverse of a given key. 
+ * The callback is invoked if the variant is NOT the specified key, else the elseCallback is invoked.
  */
 type IfNotFn<TAll> = <
     RIf = void,
@@ -98,225 +155,211 @@ type IfNotFn<TAll> = <
     callback?: (unwrapValue: Partial<TAll>) => RIf,
     elseCallback?: (unwrapValue: Partial<TAll>) => RElse
 ) => [RIf, RElse] extends [void, void]
-? boolean
-: RIf extends void
-? boolean | Exclude<RElse, void>
-: RElse extends void
-? boolean | Exclude<RIf, void>
-: Exclude<RIf, void> | Exclude<RElse, void>;
+    ? boolean
+    : RIf extends void
+    ? boolean | Exclude<RElse, void>
+    : RElse extends void
+    ? boolean | Exclude<RIf, void>
+    : Exclude<RIf, void> | Exclude<RElse, void>;
 
+/**
+ * The object type used by the `ifNot` property on an enum instance.
+ */
 type ObjectToIfNotMap<T> = {
     [K in keyof T]: IfNotFn<T>;
 };
 
-type ObjectKeys<T> = {
-    [K in keyof T]: K;
-}[keyof T];
-
-
-export type EnumFactory<VARIANTS extends { [varaintKey: string]: any }> = {
-    /**
-     * Unwrap to get the underlying value of the tuple
-     */
-    unwrap: () => Partial<VARIANTS>,
-    /**
-     * `if` proxy: Check if the current variant matches a given tag.
-     * If it does, call the provided callback (if any) or return true.
-     * Otherwise, call optional second callback and return false.
-     * If you return a value from either callback it will be returned instead of a boolean if that callback is exectued.
-     */
-    if: ObjectToIfMap<VARIANTS>,
-    /**
-     * `ifNot` proxy: Check if the current variant is NOT a given tag.
-     * If it isn't that tag, call the callback (if any) or return true.
-     * Otherwise, call optional second callback and return false.
-     * If you return a value from either callback it will be returned instead of a boolean if that callback is exectued.
-     */
-    ifNot: ObjectToIfNotMap<VARIANTS>,
-    /**
-     * `match`: Pattern match against the current variant.
-     * If a matching key is found, call its callback.
-     * Otherwise, if `_` is defined, call it.
-     * Return types for each callback flow to the top return type for this method.
-     */
-    match: <A extends MatchFns<VARIANTS>>(callbacks: A) => { [K in keyof A]: A[K] extends (...args: any) => any ? ReturnType<A[K]> : A[K] }[keyof A] | undefined,
-    /**
-     * `matchAsync`: Pattern match against the current variant with async callbacks.
-     * If a matching key is found, call its callback.
-     * Otherwise, if `_` is defined, call it.
-     * Return types for each callback flow to the top return type for this method.
-     */
-    matchAsync: <A extends MatchFnsAsync<VARIANTS>>(callbacks: A) => Promise<{ [K in keyof A]: A[K] extends (...args: any) => Promise<any> ? Awaited<ReturnType<A[K]>> : A[K] }[keyof A] | undefined>
-};
-
-
 /**
- * Creates a tagged enum value factory. Given a `[tag, value]` tuple,
- * returns an object with utilities for pattern matching and conditional checks.
+ * Creates a single variant object.
+ * 
+ * @param allVariants   The entire variants record for reference.
+ * @param tag           The variant key being constructed.
+ * @param data          The associated data for this variant key.
+ * @returns An object with `tag`, `payload`, and all the utility methods (if, match, etc.).
  */
-const enumFactory = <VARIANTS extends { [varaintKey: string]: any }>(value: Partial<VARIANTS>): EnumFactory<VARIANTS>  => {
-    const tag = Object.keys(value).pop() || "";
-    const data = value[tag];
+function enumFactory<
+    ALL extends VariantsRecord,
+    TAG extends keyof ALL & string
+>(
+    allVariants: ALL,
+    tag: TAG,
+    data: ALL[TAG]
+): EnumFactory<TAG, ALL[TAG], ALL> {
+
+    if (tag === "_") {
+        throw new Error(
+            'Variant key "_" is reserved for catch-all usage in `match`; cannot use "_" as a variant name.'
+        );
+    }
 
     return {
-        unwrap: () => ({[tag]: data} as any),
-        if: new Proxy({} as ObjectToIfMap<VARIANTS>, {
+        tag,
+        data: data,
+        unwrap: () => ({ [tag]: data } as unknown as Partial<ALL>),
+        key: () => tag,
+        if: new Proxy({} as ObjectToIfMap<ALL>, {
             get: (_tgt, prop: string) => {
                 return (callback?: Function, elseCallback?: Function) => {
                     if (prop === tag) {
                         if (callback) {
                             const result = callback(data);
-                            return typeof result == "undefined" ? true : result;
+                            return result === undefined ? true : result;
                         }
                         return true;
-                    } else if (typeof elseCallback !== "undefined") {
-                        const result = elseCallback(value);
-                        return typeof result == "undefined" ? false : result;
+                    } else if (elseCallback) {
+                        const result = elseCallback({ [tag]: data } as unknown as Partial<ALL>);
+                        return result === undefined ? false : result;
                     }
                     return false;
                 };
             }
         }),
-        ifNot: new Proxy({} as ObjectToIfNotMap<VARIANTS>, {
+        ifNot: new Proxy({} as ObjectToIfNotMap<ALL>, {
             get: (_tgt, prop: string) => {
                 return (callback?: Function, elseCallback?: Function) => {
                     if (prop !== tag) {
                         if (callback) {
-                            const result = callback(value);
-                            return typeof result == "undefined" ? true : result;
+                            const result = callback({ [tag]: data } as unknown as Partial<ALL>);
+                            return result === undefined ? true : result;
                         }
                         return true;
-                    } else if (typeof elseCallback !== "undefined") {
-                        const result = elseCallback(value);
-                        return typeof result == "undefined" ? false : result;
+                    } else if (elseCallback) {
+                        const result = elseCallback({ [tag]: data } as unknown as Partial<ALL>);
+                        return result === undefined ? false : result;
                     }
                     return false;
                 };
             }
         }),
         match: (callbacks) => {
-            if (typeof callbacks == "undefined") throw new Error(`No callbacks provided for match() call for variant "${String(tag)}".`);
-
-            const maybeCall = callbacks[tag];
-            if (maybeCall) {
-                return (maybeCall as Function)(data);
+            const maybeFn = callbacks[tag];
+            if (maybeFn) {
+                return maybeFn(data);
             }
-            const catchCall = callbacks._;
-            if (catchCall) return catchCall(undefined as any);
+            const catchAll = callbacks._ as () => any;
+            if (catchAll) {
+                return catchAll();
+            }
             throw new Error(
-                `No handler provided for variant "${String(tag)}". Either provide a function for "${String(tag)}" or a "_" fallback.`
+                `No handler for variant "${String(tag)}" and no "_" fallback`
             );
         },
         matchAsync: async (callbacks) => {
-            if (typeof callbacks == "undefined") throw new Error(`No callbacks provided for matchAsync() call for variant "${String(tag)}".`);
-
-            const maybeCall = callbacks[tag];
-            if (maybeCall) {
-                return await (maybeCall as Function)(data);
+            const maybeFn = callbacks[tag];
+            if (maybeFn) {
+                return await maybeFn(data);
             }
-            const catchCall = callbacks._;
-            if (catchCall) return await catchCall(undefined as any);
+            const catchAll = callbacks._ as () => Promise<any>;
+            if (catchAll) {
+                return await catchAll();
+            }
             throw new Error(
-                `No handler provided for variant "${String(tag)}". Either provide a function for "${String(tag)}" or a "_" fallback.`
+                `No handler for variant "${String(tag)}" and no "_" fallback`
             );
         }
     };
-};
+}
 
-
+export type EnumBuilder<ALL extends VariantsRecord> = {
+    [K in keyof ALL & string]: ALL[K] extends undefined | null | void ? () => EnumFactory<K, ALL[K], ALL> : (data: ALL[K]) => EnumFactory<K, ALL[K], ALL>;
+} & {
+    _: {
+        /**
+         * Get the avialable variant keys
+         */
+        typeKeys: keyof ALL,
+        /**
+         * Get the variants object used to construct this enum.
+         */
+        typeVariants: Partial<ALL>,
+        /** Get the type of the Enum for declaring fn arguments and the like.  Example:
+         * 
+         * ```ts
+         * const myEnum = IronEnum<{foo: string, bar: string}>();
+         * 
+         * const acceptsMyEnum = (value: typeof myEnum.typeOf) { /* .. * / }
+         * ```
+         */
+        typeOf: EnumFactory<keyof ALL & string, any, ALL>, 
+        /**
+         * Reconstructs a variant from a plain object that must have exactly one key.
+         */
+        parse(dataObj: Partial<ALL>): EnumFactory<keyof ALL & string, any, ALL>;
+    }
+}
 
 /**
- * `IronEnum` generator function: Creates a proxy that provides builder functions
- * for each variant. Accessing `MyEnum.Variant` returns a function that,
- * when called with arguments, returns an enum instance.
+ * Constructs an enum "builder" object. Each key in the `ALL` record
+ * can be used as a function to produce a variant value via `enumFactory`.
+ * 
+ * The returned object also includes a `parse(...)` method that
+ * accepts a plain object with exactly one key and re-creates
+ * the corresponding variant object.
  */
-export const IronEnum = <VARIANTS extends { [key: string]: any }>(): ObjectToBuilderMap<VARIANTS> & { 
-    /**
-     * Get the avialable variant keys
-     */
-    readonly typeKeys: ObjectKeys<VARIANTS>,
-    /**
-     * Get the variants object used to construct this enum.
-     */
-    readonly typeVariants: Partial<VARIANTS>,
-    /** Get the type of the Enum for declaring fn arguments and the like.  Example:
-     * 
-     * ```ts
-     * const myEnum = IronEnum<{foo: string, bar: string}>();
-     * 
-     * const acceptsMyEnum = (value: typeof myEnum.typeOf) { /* .. * / }
-     * ```
-     */
-    readonly typeOf: ReturnType<typeof enumFactory<VARIANTS>>, 
-    /**
-     * Parse JSON as an enum type. Example:
-     * 
-     * ```ts
-     * const myEnum = IronEnum<{foo: string, bar: string}>();
-     * 
-     * const enumValue = myEnum.foo("bazz");
-     * // converts to standard JSON object
-     * const jsonValue = enumValue.unwrap();
-     * // converts back to enum 
-     * const parsedEnum = myEnum.parse(jsonValue);
-     * 
-     * ```
-     * 
-     * @param data 
-     * @returns 
-     */
-    readonly parse: (data: Partial<VARIANTS>) => ReturnType<typeof enumFactory<VARIANTS>> 
-} => {
-    return new Proxy({} as any, {
-        get: (_tgt, tag: string) => {
-            if (["typeOf", "typeKeys", "typeVariants"].indexOf(tag) !== -1) {
-                throw new Error(`Property "${tag}" of IronEnum cannot be used at runtime, only for types!`);
-            }
-            if (tag == "parse") {
-                return (data: Partial<VARIANTS>) => {
-                    const allKeys = Object.keys(data);
-                    if (allKeys.length !== 1) {
-                        throw new Error(`Expected exactly 1 variant key, got ${allKeys.length}: ${allKeys.join(", ")}`);
+export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? "ERROR: Cannot use '_' as a variant key!" : EnumBuilder<ALL> {
+    const builder = {} ;
+
+    // Using a Proxy to dynamically handle variant construction
+    // and the special "parse" method at runtime.
+    return new Proxy({}, {
+        get: (_tgt, prop: string) => {
+            if (prop === "_") {
+                return new Proxy({}, {
+                    get: (_tgt2, prop2: string) => {
+                        if (prop2 == "parse") {
+                            return (dataObj: Partial<ALL>) => {
+                                const keys = Object.keys(dataObj);
+                                if (keys.length !== 1) {
+                                    throw new Error(
+                                        `Expected exactly 1 variant key, got ${keys.length}`
+                                    );
+                                }
+                                const actualKey = keys[0] as keyof ALL & string & string;
+                                return enumFactory<ALL, typeof actualKey>(
+                                    {} as ALL,
+                                    actualKey,
+                                    dataObj[actualKey] as ALL[typeof actualKey]
+                                );
+                            }
+                        }
+                        throw new Error(`Property '${prop2}' not availalbe at runtime!`);
                     }
-                    const key = allKeys.pop() as keyof VARIANTS | undefined;
-                    if (!key) throw new Error(`Key not provided for "parse" method of IronEnum!`);
-                    return enumFactory<VARIANTS>(data);
-                }
+                })
             }
-            return (data: any) => enumFactory<VARIANTS>({[tag]: data} as Partial<VARIANTS>);
+
+            return (payload: any) => {
+                return enumFactory<ALL, typeof prop>(
+                    {} as ALL,
+                    prop,
+                    payload
+                );
+            };
         }
-    });
-};
+    }) as any;
+}
 
 /**
- * Option type, usage:
+ * An Option type constructor for a nullable value.
+ * Example usage:
  * 
- * // create a type specific option
  * const NumOption = Option<number>();
- * const myNumber = NumOption.Some(22);
- * // or
- * const myNumber = Option<number>().Some(22);
- * 
- * @returns IronEnum<{Some: T, None}>
+ * const someVal = NumOption.Some(123);
+ * const noneVal = NumOption.None();
  */
 export const Option = <T>(): ReturnType<typeof IronEnum<{ Some: T, None: undefined }>> => IronEnum<{
     Some: T,
     None: undefined
-}>()
-
+}>();
 
 /**
- * Result type, usage:
+ * A Result type constructor for a success or error scenario.
+ * Example usage:
  * 
  * const NumResult = Result<number, Error>();
- * const myResult = NumResult.Ok(22);
- * // or
- * const myResult = Result<number, Error>().Ok(22);
- * 
- * @returns IronEnum<{Ok: T, Err: E}>
+ * const okVal = NumResult.Ok(42);
+ * const errVal = NumResult.Err(new Error("something happened"));
  */
 export const Result = <T, E>(): ReturnType<typeof IronEnum<{ Ok: T, Err: E }>> => IronEnum<{
     Ok: T,
     Err: E
-}>()
-
+}>();
