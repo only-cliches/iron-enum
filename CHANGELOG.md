@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.4.1 Mar 24, 2025
+- Cleaned up README.
+
 ## 1.4.0 Mar 24, 2025
 - Complete rewrite to improve type inference.
 - You can no longer pass a `_` variant key to the constructor.

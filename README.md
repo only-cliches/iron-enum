@@ -315,7 +315,3 @@ Contributions, suggestions, and feedback are welcome! Please open an issue or su
 ## License
 
 This library is available under the [MIT license](./LICENSE). See the LICENSE file for details.
-
----
-
-By including more detailed usage examples, highlighting async support, and showing how to pass and parse these enums across your application, you make it clearer to prospective users how Iron Enum can simplify their code and improve type safety. Feel free to adjust the text or add more examples relevant to your use cases. Happy coding!

@@ -297,7 +297,6 @@ export type EnumBuilder<ALL extends VariantsRecord> = {
  * the corresponding variant object.
  */
 export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? "ERROR: Cannot use '_' as a variant key!" : EnumBuilder<ALL> {
-    const builder = {} ;
 
     // Using a Proxy to dynamically handle variant construction
     // and the special "parse" method at runtime.
