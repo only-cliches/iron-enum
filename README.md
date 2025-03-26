@@ -1,10 +1,10 @@
 # Iron Enum
 
-![GitHub Repo stars](https://img.shields.io/github/stars/only-cliches/iron-enum)
-![NPM Version](https://img.shields.io/npm/v/iron-enum)
-![JSR Version](https://img.shields.io/jsr/v/%40onlycliches/iron-enum)
+[![GitHub Repo stars](https://img.shields.io/github/stars/only-cliches/iron-enum)](https://github.com/only-cliches/iron-enum)
+[![NPM Version](https://img.shields.io/npm/v/iron-enum)](https://www.npmjs.com/package/iron-enum)
+[![JSR Version](https://img.shields.io/jsr/v/%40onlycliches/iron-enum)](https://jsr.io/@onlycliches/iron-enum)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/iron-enum)
+[![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/iron-enum)](https://pkg-size.dev/iron-enum)
 
 **Iron Enum** is a lightweight library that brings [Rust-like](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html) tagged enums (also called algebraic data types or discriminated unions) to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures — all with TypeScript’s strong type-checking at compile time.
 
