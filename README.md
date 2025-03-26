@@ -1,10 +1,14 @@
 # Iron Enum
 
-<a href="https://pkg-size.dev/iron-enum"><img src="https://pkg-size.dev/badge/bundle/1387" title="Bundle size for iron-enum"></a>
+![GitHub Repo stars](https://img.shields.io/github/stars/only-cliches/iron-enum)
+![NPM Version](https://img.shields.io/npm/v/iron-enum)
+![JSR Version](https://img.shields.io/jsr/v/%40onlycliches/iron-enum)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/iron-enum)
 
 **Iron Enum** is a lightweight library that brings [Rust-like](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html) tagged enums (also called algebraic data types or discriminated unions) to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures — all with TypeScript’s strong type-checking at compile time.
 
-| [GitHub](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
+[Try Iron Enum Now - Free StackBlitz Sandbox](https://stackblitz.com/edit/iron-enum-sandbox?file=src%2Fmain.ts)
 
 ## Table of Contents
 - [Iron Enum](#iron-enum)
@@ -32,7 +36,7 @@
 
 ## Features
 
-- **Lightweight & Zero Dependencies:** A minimal, dependency-free implementation (~630 bytes) leveraging TypeScript’s advanced type system and ES6 Proxies.
+- **Lightweight & Zero Dependencies:** A minimal, dependency-free implementation (>1k bytes) leveraging TypeScript’s advanced type system and Proxies.
 - **Type-Safe Tagged Variants:** Each variant is created with a unique tag and associated data, enforced at compile time by TypeScript.
 - **Powerful Pattern Matching:** Intuitive `match` / `matchAsync` methods eliminate the need for brittle switch statements or nested conditionals.
 - **Conditional Checks:** Minimal overhead for checking variants (via `if` / `ifNot`) in a readable style.
