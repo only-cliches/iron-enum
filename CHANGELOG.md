@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.2
+- Renamed `EnumBuilder` to `IronEnumInstance`.
+- Updated return type for `Option` and `Result`.
+
 ## 1.4.1 Mar 24, 2025
 - Cleaned up README.
 

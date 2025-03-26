@@ -260,7 +260,7 @@ function enumFactory<
     };
 }
 
-export type EnumBuilder<ALL extends VariantsRecord> = {
+export type IronEnumInstance<ALL extends VariantsRecord> = {
     [K in keyof ALL & string]: ALL[K] extends undefined | null | void ? () => EnumFactory<K, ALL[K], ALL> : (data: ALL[K]) => EnumFactory<K, ALL[K], ALL>;
 } & {
     _: {
@@ -296,7 +296,7 @@ export type EnumBuilder<ALL extends VariantsRecord> = {
  * accepts a plain object with exactly one key and re-creates
  * the corresponding variant object.
  */
-export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? "ERROR: Cannot use '_' as a variant key!" : EnumBuilder<ALL> {
+export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? "ERROR: Cannot use '_' as a variant key!" : IronEnumInstance<ALL> {
 
     // Using a Proxy to dynamically handle variant construction
     // and the special "parse" method at runtime.
@@ -313,7 +313,7 @@ export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? 
                                         `Expected exactly 1 variant key, got ${keys.length}`
                                     );
                                 }
-                                const actualKey = keys[0] as keyof ALL & string & string;
+                                const actualKey = keys[0] as keyof ALL & string;
                                 return enumFactory<ALL, typeof actualKey>(
                                     {} as ALL,
                                     actualKey,
@@ -345,7 +345,7 @@ export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? 
  * const someVal = NumOption.Some(123);
  * const noneVal = NumOption.None();
  */
-export const Option = <T>(): ReturnType<typeof IronEnum<{ Some: T, None: undefined }>> => IronEnum<{
+export const Option = <T>(): IronEnumInstance<{ Some: T, None: undefined }> => IronEnum<{
     Some: T,
     None: undefined
 }>();
@@ -358,7 +358,7 @@ export const Option = <T>(): ReturnType<typeof IronEnum<{ Some: T, None: undefin
  * const okVal = NumResult.Ok(42);
  * const errVal = NumResult.Err(new Error("something happened"));
  */
-export const Result = <T, E>(): ReturnType<typeof IronEnum<{ Ok: T, Err: E }>> => IronEnum<{
+export const Result = <T, E>(): IronEnumInstance<{ Ok: T, Err: E }> => IronEnum<{
     Ok: T,
     Err: E
 }>();

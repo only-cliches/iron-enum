@@ -1,4 +1,4 @@
-import { IronEnum, EnumFactory, EnumBuilder } from '../mod'; // Adjust path as needed
+import { IronEnum, EnumFactory, IronEnumInstance } from '../mod'; // Adjust path as needed
 
 // Define a sample set of variants
 type MyVariants = {

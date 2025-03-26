@@ -1,5 +1,7 @@
 # Iron Enum
 
+<a href="https://pkg-size.dev/iron-enum"><img src="https://pkg-size.dev/badge/bundle/1387" title="Bundle size for iron-enum"></a>
+
 **Iron Enum** is a lightweight library that brings [Rust-like](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html) tagged enums (also called algebraic data types or discriminated unions) to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures — all with TypeScript’s strong type-checking at compile time.
 
 | [GitHub](https://github.com/only-cliches/iron-enum) | [NPM](https://www.npmjs.com/package/iron-enum) | [JSR](https://jsr.io/@onlycliches/iron-enum) |
