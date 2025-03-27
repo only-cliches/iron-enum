@@ -22,7 +22,6 @@
     - [Pattern Matching](#pattern-matching)
     - [Conditional Checks (`if` / `ifNot`)](#conditional-checks-if--ifnot)
     - [Async Pattern Matching](#async-pattern-matching)
-    - [Unwrapping](#unwrapping)
     - [Serialization \& Deserialization](#serialization--deserialization)
   - [Advanced Examples](#advanced-examples)
     - [Using Classes and Complex Objects](#using-classes-and-complex-objects)
@@ -30,7 +29,17 @@
     - [Inferring Data Types](#inferring-data-types)
   - [Option \& Result](#option--result)
     - [Option](#option)
+      - [Creating Options](#creating-options)
+      - [Unwrap](#unwrap)
+      - [Unwrap with fallback](#unwrap-with-fallback)
+      - [Convert to Result](#convert-to-result)
+      - [Matching](#matching)
     - [Result](#result)
+      - [Creating Results](#creating-results)
+      - [Unwrap](#unwrap-1)
+      - [Unwrap with fallback](#unwrap-with-fallback-1)
+      - [Convert to Option](#convert-to-option)
+      - [Matching](#matching-1)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -140,8 +149,8 @@ fooValue.if.Foo(
     console.log("Yes, it's Foo:", val.x);
     return "someReturnValue";
   }, // else:
-  (unwrapped) => {
-    // unwrapped is { Bar?: string, Empty?: undefined, Foo?: { x: number } }
+  (json) => {
+    // json is { Bar?: string, Empty?: undefined, Foo?: { x: number } }
     return "elseReturnValue";
   }
 );
@@ -176,24 +185,9 @@ const result = await barValue.matchAsync({
 console.log("Async match result:", result);
 ```
 
-### Unwrapping
-
-To convert back to a simpler structure, you can call `unwrap()`. This returns an object with a single key matching the current variant.
-
-```ts
-const simpleEnum = IronEnum<{
-  foo: { text: string };
-  bar: { title: string };
-}>();
-
-const testValue = simpleEnum.foo({ text: "hello" });
-const unwrapped = testValue.unwrap(); 
-// unwrapped = { foo: { text: "hello" } }
-```
-
 ### Serialization & Deserialization
 
-Iron Enum values can be easily serialized to JSON (or sent across the network) by using `unwrap()`. To get them back into an Iron Enum value, you can call `parse` on the builder’s `_` property.
+Iron Enum values can be easily serialized to JSON (or sent across the network) by using `toJSON()`. To get them back into an Iron Enum value, you can call `parse` on the builder’s `_` property.
 
 ```ts
 const simpleEnum = IronEnum<{
@@ -202,7 +196,7 @@ const simpleEnum = IronEnum<{
 }>();
 
 const originalValue = simpleEnum.foo({ text: "hello" });
-const jsonValue = originalValue.unwrap(); 
+const jsonValue = originalValue.toJSON(); 
 // jsonValue is now { foo: { text: "hello" } }
 
 const parsedValue = simpleEnum._.parse(jsonValue);
@@ -279,39 +273,115 @@ type Inferred = InferFooDataType<typeof fooValue>;
 ## Option & Result
 
 Iron Enum includes convenient implementations for two common patterns: `Option` and `Result`.
+Absolutely! Here’s a set of clear and practical usage examples for the `Option` and `Result` types that you can include in your README to help users understand how to use your library effectively.
+
+---
 
 ### Option
 
-Represents either a value (`Some`) or no value (`None`):
+The `Option` type is useful for representing values that may or may not exist.
+
+#### Creating Options
 
 ```ts
-import { Option } from "iron-enum";
-
 const NumberOption = Option<number>();
-const someValue = NumberOption.Some(123);
-const noneValue = NumberOption.None();
 
-someValue.match({
-  Some: (val) => console.log("Has value:", val), // 123
-  None: () => console.log("No value")
-});
+const some = NumberOption.Some(42);
+const none = NumberOption.None();
 ```
+
+#### Unwrap
+
+```ts
+some.unwrap(); // 42
+none.unwrap(); // ❌ throws: Called .unwrap() on an Option.None enum!
+```
+
+#### Unwrap with fallback
+
+```ts
+some.unwrap_or(100);       // 42
+none.unwrap_or(100);       // 100
+
+some.unwrap_or_else(() => 999); // 42
+none.unwrap_or_else(() => 999); // 999
+```
+
+#### Convert to Result
+
+```ts
+const OkOrErr = some.ok_or("Not found");   // Ok(42)
+const ErrRes = none.ok_or("Not found");    // Err("Not found")
+
+const OkOrErrLazy = some.ok_or_else(() => "fail"); // Ok(42)
+const ErrResLazy = none.ok_or_else(() => "fail");  // Err("fail")
+```
+
+#### Matching
+
+```ts
+some.match({
+    Some: (val) => `Value is ${val}`,
+    None: () => "No value"
+}); // "Value is 42"
+
+none.match({
+    Some: (val) => `Value is ${val}`,
+    None: () => "No value"
+}); // "No value"
+```
+
+---
 
 ### Result
 
-Represents a successful outcome (`Ok`) or an error (`Err`):
+The `Result` type is useful for returning either a success value (`Ok`) or an error (`Err`).
+
+#### Creating Results
 
 ```ts
-import { Result } from "iron-enum";
+const NumResult = Result<number, string>();
 
-const MyResult = Result<number, Error>();
-const success = MyResult.Ok(42);
-const failure = MyResult.Err(new Error("Something went wrong"));
+const ok = NumResult.Ok(123);
+const err = NumResult.Err("Something went wrong");
+```
 
-success.match({
-  Ok: (val) => console.log("Success with:", val),
-  Err: (err) => console.error("Error:", err)
-});
+#### Unwrap
+
+```ts
+ok.unwrap(); // 123
+err.unwrap(); // ❌ throws: Called .unwrap() on a Result.Err enum!
+```
+
+#### Unwrap with fallback
+
+```ts
+ok.unwrap_or(0);        // 123
+err.unwrap_or(0);       // 0
+
+ok.unwrap_or_else(() => 999);   // 123
+err.unwrap_or_else(() => 999);  // 999
+```
+
+#### Convert to Option
+
+```ts
+const SomeOpt = ok.ok();   // Some(123)
+const NoneOpt = err.ok();  // None()
+```
+
+#### Matching
+
+```ts
+ok.match({
+    Ok: (val) => `Success: ${val}`,
+    Err: (e) => `Failure: ${e}`
+}); // "Success: 123"
+
+err.match({
+    Ok: (val) => `Success: ${val}`,
+    Err: (e) => `Failure: ${e}`
+}); // "Failure: Something went wrong"
 ```
 
 ## Contributing

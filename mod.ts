@@ -7,6 +7,13 @@ export type VariantsRecord = {
 };
 
 
+type EnumUnion<ALL extends VariantsRecord> = {
+    [K in keyof ALL & string]: ALL[K];
+}[keyof ALL & string];
+
+type EnumFactoryUnion<ALL extends VariantsRecord> = {
+    [K in keyof ALL & string]: EnumFactory<K, ALL[K], ALL>;
+}[keyof ALL & string];
 
 /**
  * Represents a single constructed enum value.
@@ -22,23 +29,23 @@ export type VariantsRecord = {
  */
 export type EnumFactory<
     TAG extends keyof ALL & string,
-    PAYLOAD,
+    PAYLOD,
     ALL extends VariantsRecord
 > = {
     tag: TAG;
-    data: PAYLOAD;
+    data: EnumUnion<ALL>;
 } & EnumMethods<ALL>;
 
 /**
  * A set of methods made available to every constructed enum value:
- * - `unwrap`: Returns a plain object with exactly one key/value corresponding to the current variant.
+ * - `toJSON`: Returns a plain object with exactly one key/value corresponding to the current variant.
  * - `key`: Returns the variant key.
  * - `if` and `ifNot`: Provide conditional checks against a specific variant.
  * - `match`: Synchronously pattern-match on the variant key.
  * - `matchAsync`: Asynchronously pattern-match on the variant key.
  */
 export interface EnumMethods<ALL extends VariantsRecord> {
-    unwrap: () => Partial<ALL>;
+    toJSON: () => Partial<ALL>;
     key: () => keyof ALL & string;
     if: ObjectToIfMap<ALL>;
     ifNot: ObjectToIfNotMap<ALL>;
@@ -118,14 +125,14 @@ type IfFnNull<T extends Record<string, any>> = <
 
 /**
  * Similar to IfFnNull, but for properties that cannot be null/undefined.
- * The `ifCallback` receives the unwrapped value.
+ * The `ifCallback` receives the json value.
  */
 type IfFnArg<TValue, T extends Record<string, any>> = <
     RIf = void,
     RElse = void
 >(
     ifCallback?: (val: TValue) => RIf,
-    elseCallback?: (unwrapValue: Partial<T>) => RElse
+    elseCallback?: (jsonValue: Partial<T>) => RElse
 ) => [RIf, RElse] extends [void, void]
     ? boolean
     : RIf extends void
@@ -152,8 +159,8 @@ type IfNotFn<TAll> = <
     RIf = void,
     RElse = void
 >(
-    callback?: (unwrapValue: Partial<TAll>) => RIf,
-    elseCallback?: (unwrapValue: Partial<TAll>) => RElse
+    callback?: (jsonValue: Partial<TAll>) => RIf,
+    elseCallback?: (jsonValue: Partial<TAll>) => RElse
 ) => [RIf, RElse] extends [void, void]
     ? boolean
     : RIf extends void
@@ -195,7 +202,7 @@ function enumFactory<
     return {
         tag,
         data: data,
-        unwrap: () => ({ [tag]: data } as unknown as Partial<ALL>),
+        toJSON: () => ({ [tag]: data } as unknown as Partial<ALL>),
         key: () => tag,
         if: new Proxy({} as ObjectToIfMap<ALL>, {
             get: (_tgt, prop: string) => {
@@ -260,32 +267,36 @@ function enumFactory<
     };
 }
 
+
+
+export type EnumProperties<ALL extends VariantsRecord, AddedProps> = {
+    /**
+     * Get the avialable variant keys
+     */
+    typeKeys: keyof ALL,
+    /**
+     * Get the variants object used to construct this enum.
+     */
+    typeVariants: Partial<ALL>,
+    /** Get the type of the Enum for declaring fn arguments and the like.  Example:
+     * 
+     * ```ts
+     * const myEnum = IronEnum<{foo: string, bar: string}>();
+     * 
+     * const acceptsMyEnum = (value: typeof myEnum.typeOf) { /* .. * / }
+     * ```
+     */
+    typeOf: EnumFactoryUnion<ALL> & AddedProps, 
+    /**
+     * Reconstructs a variant from a plain object that must have exactly one key.
+     */
+    parse(dataObj: Partial<ALL>): EnumFactory<keyof ALL & string, EnumUnion<ALL>, ALL>;
+};
+
 export type IronEnumInstance<ALL extends VariantsRecord> = {
-    [K in keyof ALL & string]: ALL[K] extends undefined | null | void ? () => EnumFactory<K, ALL[K], ALL> : (data: ALL[K]) => EnumFactory<K, ALL[K], ALL>;
+    [K in keyof ALL & string]: ALL[K] extends undefined | null | void ? () => EnumFactory<K, ALL[K], ALL> : (data: ALL[K]) => EnumFactory<K, ALL[K],ALL>;
 } & {
-    _: {
-        /**
-         * Get the avialable variant keys
-         */
-        typeKeys: keyof ALL,
-        /**
-         * Get the variants object used to construct this enum.
-         */
-        typeVariants: Partial<ALL>,
-        /** Get the type of the Enum for declaring fn arguments and the like.  Example:
-         * 
-         * ```ts
-         * const myEnum = IronEnum<{foo: string, bar: string}>();
-         * 
-         * const acceptsMyEnum = (value: typeof myEnum.typeOf) { /* .. * / }
-         * ```
-         */
-        typeOf: EnumFactory<keyof ALL & string, any, ALL>, 
-        /**
-         * Reconstructs a variant from a plain object that must have exactly one key.
-         */
-        parse(dataObj: Partial<ALL>): EnumFactory<keyof ALL & string, any, ALL>;
-    }
+    _: EnumProperties<ALL, {}>
 }
 
 /**
@@ -337,18 +348,28 @@ export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? 
     }) as any;
 }
 
-/**
- * An Option type constructor for a nullable value.
- * Example usage:
- * 
- * const NumOption = Option<number>();
- * const someVal = NumOption.Some(123);
- * const noneVal = NumOption.None();
- */
-export const Option = <T>(): IronEnumInstance<{ Some: T, None: undefined }> => IronEnum<{
-    Some: T,
-    None: undefined
-}>();
+
+type ExtendedRustMethods<T> = {
+    unwrap: () => T,
+    unwrap_or: <R>(value: R) => R | T,
+    unwrap_or_else: <R>(callback: () => R) => R | T,
+}
+
+type ResultMethods<ALL extends {Ok: unknown, Err: unknown}> = {
+    ok: () => OptionFactory<{Some: ALL["Ok"], None: undefined}>
+}
+
+export type ResultFactory<ALL extends {Ok: unknown, Err: unknown}> = 
+    EnumFactory<keyof ALL & string, EnumUnion<ALL>, ALL> 
+    & ExtendedRustMethods<ALL["Ok"]> 
+    & ResultMethods<ALL>
+
+export type ResultInstance<ALL extends {Ok: unknown, Err: unknown}> = {
+    Ok: (data: ALL["Ok"]) => ResultFactory<ALL>,
+    Err: (data: ALL["Err"]) => ResultFactory<ALL>
+} & {
+    _: EnumProperties<ALL, ExtendedRustMethods<ALL["Ok"]> & ResultMethods<ALL>>
+}
 
 /**
  * A Result type constructor for a success or error scenario.
@@ -358,7 +379,75 @@ export const Option = <T>(): IronEnumInstance<{ Some: T, None: undefined }> => I
  * const okVal = NumResult.Ok(42);
  * const errVal = NumResult.Err(new Error("something happened"));
  */
-export const Result = <T, E>(): IronEnumInstance<{ Ok: T, Err: E }> => IronEnum<{
-    Ok: T,
-    Err: E
-}>();
+export const Result = <T, E>(): ResultInstance<{Ok: T, Err: E}> => (() => {
+    const resultEnum = IronEnum<{Ok: T, Err: E}>();
+
+    return {
+        _: resultEnum._ as any,
+        Ok: (value: T) => ({
+            ...resultEnum.Ok(value),
+            unwrap: () => value,
+            unwrap_or: x => value,
+            unwrap_or_else: x => value,
+            ok: () => Option<T>().Some(value)
+        }),
+        Err: (value: E) => ({
+            ...resultEnum.Err(value),
+            unwrap: () => { throw new Error(`Called .unwrap() on an Result.Err enum!`) },
+            unwrap_or: x => x,
+            unwrap_or_else: x => x(),
+            ok: () => Option<T>().None()
+        })
+    }
+})();
+
+
+
+export type OptionFactory<ALL extends {Some: unknown, None: undefined}> = 
+    EnumFactory<keyof ALL & string, EnumUnion<ALL>, ALL> 
+    & ExtendedRustMethods<ALL["Some"]> 
+    & OptionMethods<ALL["Some"]>;
+
+type OptionMethods<OK> = {
+    ok_or: <E>(error: E) => ResultFactory<{Ok: OK, Err: E}>,
+    ok_or_else: <E>(error: () => E) => ResultFactory<{Ok: OK, Err: E}>
+}
+
+export type OptionInstance<ALL extends {Some: unknown, None: undefined}> = {
+    Some: (data: ALL["Some"]) => OptionFactory<ALL>
+    None: () => OptionFactory<ALL>,
+} & {
+    _: EnumProperties<ALL, ExtendedRustMethods<ALL["Some"]> & OptionMethods<ALL["Some"]>>
+}
+
+/**
+ * An Option type constructor for a nullable value.
+ * Example usage:
+ * 
+ * const NumOption = Option<number>();
+ * const someVal = NumOption.Some(123);
+ * const noneVal = NumOption.None();
+ */
+export const Option = <T>(): OptionInstance<{Some: T, None: undefined}> => (() => {
+    const optEnum = IronEnum<{ Some: T, None: undefined }>();
+
+    return {
+        _: optEnum._ as any,
+        Some: (value: T) => ({
+            ...optEnum.Some(value),
+            unwrap: () => value,
+            unwrap_or: x => value,
+            unwrap_or_else: x => value,
+            ok_or: <R>(err: R) => Result<T, R>().Ok(value),
+            ok_or_else: <R>(err: () => R) => Result<T, R>().Ok(value)
+        }),
+        None: () => ({
+            ...optEnum.None(),
+            unwrap: () => {throw new Error(`Called .unwrap() on an Option.None enum!`)},
+            unwrap_or: x => x,
+            unwrap_or_else: x => x(),
+            ok_or: <R>(err: R) => Result<T, R>().Err(err),
+            ok_or_else: <R>(err: () => R) => Result<T, R>().Err(err())
+        })
+    }
+})();

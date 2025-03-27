@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.5.0 Mar 27, 2025
+- Renamed the `unwrap` method to `toJSON`.
+- Added Rust like helper methods to `Option` and `Result`.
+
 ## 1.4.3 Mar 25, 2025
 - Updated README.
 

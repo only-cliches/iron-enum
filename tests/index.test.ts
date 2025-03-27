@@ -21,13 +21,13 @@ type ff = InferFooDataType<typeof fooValue>;
 describe('IronEnum', () => {
   test('creates variants with correct tags and values', () => {
     const fooValue = MyEnum.Foo({ x: 42 });
-    expect(fooValue.unwrap()).toEqual({'Foo': { x: 42 }});
+    expect(fooValue.toJSON()).toEqual({'Foo': { x: 42 }});
 
     const barValue = MyEnum.Bar('hello');
-    expect(barValue.unwrap()).toEqual({'Bar': 'hello'});
+    expect(barValue.toJSON()).toEqual({'Bar': 'hello'});
 
     const emptyValue = MyEnum.Empty();
-    expect(emptyValue.unwrap()).toEqual({'Empty': undefined});
+    expect(emptyValue.toJSON()).toEqual({'Empty': undefined});
   });
 
   test('match calls the correct callback for a variant', () => {
@@ -104,7 +104,7 @@ describe('IronEnum', () => {
 
   test("unwrap and parse work as expected", async () => {
     const fooValue = MyEnum.Foo({ x: 99 });
-    const fooJSON = fooValue.unwrap();
+    const fooJSON = fooValue.toJSON();
     const parsedFoo = MyEnum._.parse(fooJSON);
     
     const result = parsedFoo.if.Foo((args) => {
@@ -119,7 +119,7 @@ describe('IronEnum', () => {
 
   test("ifElse to work as expected", async () => {
     const fooValue = MyEnum.Foo({ x: 99 });
-    const fooJSON = fooValue.unwrap();
+    const fooJSON = fooValue.toJSON();
     const parsedFoo = MyEnum._.parse(fooJSON);
     
     parsedFoo.if.Foo((args) => {
