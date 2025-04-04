@@ -393,7 +393,7 @@ export const Result = <T, E>(): ResultInstance<{Ok: T, Err: E}> => (() => {
         }),
         Err: (value: E) => ({
             ...resultEnum.Err(value),
-            unwrap: () => { throw new Error(`Called .unwrap() on an Result.Err enum!`) },
+            unwrap: () => { throw value },
             unwrap_or: x => x,
             unwrap_or_else: x => x(),
             ok: () => Option<T>().None()
