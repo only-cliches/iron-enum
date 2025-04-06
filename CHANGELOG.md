@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.5.1 April 6, 2025
+- Added `Ok`, `Err`, `Some` and `None` convinience functions.
+- Better code comments
+- `Result.unwrap` now calls the inner error, if it's an error type.
+
 ## 1.5.0 Mar 27, 2025
 - Renamed the `unwrap` method to `toJSON`.
 - Added Rust like helper methods to `Option` and `Result`.

@@ -45,7 +45,7 @@
 
 ## Features
 
-- **Lightweight & Zero Dependencies:** A minimal, dependency-free implementation (>1k bytes) leveraging TypeScript’s advanced type system and Proxies.
+- **Lightweight & Zero Dependencies:** A minimal, dependency-free implementation (~1k bytes) leveraging TypeScript’s advanced type system and Proxies.
 - **Type-Safe Tagged Variants:** Each variant is created with a unique tag and associated data, enforced at compile time by TypeScript.
 - **Powerful Pattern Matching:** Intuitive `match` / `matchAsync` methods eliminate the need for brittle switch statements or nested conditionals.
 - **Conditional Checks:** Minimal overhead for checking variants (via `if` / `ifNot`) in a readable style.

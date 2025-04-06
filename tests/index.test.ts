@@ -9,13 +9,15 @@ type MyVariants = {
 
 const MyEnum = IronEnum<MyVariants>();
 
-const fooValue = MyEnum.Foo({ x: 42 });
-// const testFn = (accepts: typeof MyEnum["_"]["typeOf"]) => {}
+// const fooValue = MyEnum.Foo({ x: 42 });
+// const testFn = (accepts: typeof MyEnum["_"]["typeOf"]) => {
+
+// }
 // testFn(fooValue);
 
-type InferFooDataType<X extends typeof MyEnum["_"]["typeOf"]> = X extends {tag: "Foo", data: infer Y} ? Y : void;
+// type InferFooDataType<X extends typeof MyEnum["_"]["typeOf"]> = X extends {tag: "Foo", data: infer Y} ? Y : void;
 
-type ff = InferFooDataType<typeof fooValue>;
+// type ff = InferFooDataType<typeof fooValue>;
 
 
 describe('IronEnum', () => {
