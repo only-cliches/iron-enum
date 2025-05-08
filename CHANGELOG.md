@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.5.2 May 7, 2025
+- Shortened error language to save space.
+- Exported type `EnumFactoryUnion`.
+- Added `Try.async` and `Try.sync` methods inspired by `https://www.npmjs.com/package/@asleepace/try`.
+
+
 ## 1.5.1 April 6, 2025
 - Added `Ok`, `Err`, `Some` and `None` convinience functions.
 - Better code comments

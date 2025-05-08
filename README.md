@@ -40,17 +40,24 @@
       - [Unwrap with fallback](#unwrap-with-fallback-1)
       - [Convert to Option](#convert-to-option)
       - [Matching](#matching-1)
+  - [Try Utility](#try-utility)
+    - [Features](#features-1)
+    - [Usage](#usage)
+      - [Synchronous Example](#synchronous-example)
+      - [Asynchronous Example](#asynchronous-example)
+    - [API](#api)
   - [Contributing](#contributing)
   - [License](#license)
 
 ## Features
 
-- **Lightweight & Zero Dependencies:** A minimal, dependency-free implementation (~1k bytes) leveraging TypeScript’s advanced type system and Proxies.
+- **Lightweight & Zero Dependencies:** A minimal, dependency-free implementation (~1k gzipped bytes) leveraging TypeScript’s advanced type system and Proxies.
 - **Type-Safe Tagged Variants:** Each variant is created with a unique tag and associated data, enforced at compile time by TypeScript.
 - **Powerful Pattern Matching:** Intuitive `match` / `matchAsync` methods eliminate the need for brittle switch statements or nested conditionals.
 - **Conditional Checks:** Minimal overhead for checking variants (via `if` / `ifNot`) in a readable style.
 - **Supports "Empty" Variants:** Easily represent states like `None` or `Empty` by defining a variant with `undefined`.
 - **Reduced Boilerplate:** The library handles the “discriminant” under the hood, cutting down on repetitive code.
+- **Built in Result & Option:** Built in `Result` and `Option` implementations that mirror their Rust equivalents along with utility methods like `.unwrap()` and `.unwrap_or_else()`.
 
 ## Why Use This Library?
 
@@ -383,6 +390,58 @@ err.match({
     Err: (e) => `Failure: ${e}`
 }); // "Failure: Something went wrong"
 ```
+
+## Try Utility
+
+The `Try` utility provides a convenient way to wrap both synchronous and asynchronous function calls in a typed `Result`, avoiding the need for `try/catch` blocks and making error handling more expressive and composable.
+
+### Features
+
+* Clean, centralized error handling
+* Works with both sync and async functions
+* Fully type-safe with discriminated union support (`Ok` / `Err`)
+
+### Usage
+
+#### Synchronous Example
+
+```ts
+import { Try } from 'IronEnum';
+
+const result = Try.sync(() => {
+    if (Math.random() > 0.5) throw new Error("Unlucky!");
+    return "Success!";
+});
+
+if (result.isOk()) {
+    console.log("Result:", result.value);
+} else {
+    console.error("Error:", result.error.message);
+}
+```
+
+#### Asynchronous Example
+
+```ts
+const result = await Try.async(async () => {
+    const res = await fetch("/api/data");
+    return res.json();
+});
+
+if (result.isOk()) {
+    console.log("Data:", result.value);
+} else {
+    console.error("Fetch failed:", result.error.message);
+}
+```
+
+### API
+
+```ts
+Try.sync:  <X>(fn: () => X) => ResultFactory<{ Ok: X; Err: Error }>
+Try.async: <X>(fn: () => Promise<X>) => Promise<ResultFactory<{ Ok: X; Err: Error }>>
+```
+
 
 ## Contributing
 
