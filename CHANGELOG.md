@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.6.0
+- Cleaned up doc examples.
+- Added `isOk`, `isErr` to `Result` type.
+- Added `isSome`, `isNone` to `Option` type.
+- Shiny new README and playground
+
 ## 1.5.2 May 7, 2025
 - Shortened error language to save space.
 - Exported type `EnumFactoryUnion`.

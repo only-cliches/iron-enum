@@ -1,6 +1,6 @@
 {
   "name": "iron-enum",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Rust like enums for Typescript",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
@@ -16,16 +16,21 @@
     "url": "https://github.com/only-cliches/iron-enum"
   },
   "keywords": [
+    "typescript",
     "enum",
-    "algebraic data type",
     "tagged union",
-    "union",
+    "tagged unions",
+    "discriminated union",
+    "algebraic data type",
+    "adt",
+    "sum type",
+    "union types",
     "rust enums",
     "rust",
-    "option",
-    "result",
-    "rust enum",
-    "rust like enum"
+    "pattern matching",
+    "option type",
+    "result type",
+    "functional programming"
   ],
   "devDependencies": {
     "@types/jest": "^29.5.14",

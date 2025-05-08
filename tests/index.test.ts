@@ -29,7 +29,7 @@ describe('IronEnum', () => {
     expect(barValue.toJSON()).toEqual({'Bar': 'hello'});
 
     const emptyValue = MyEnum.Empty();
-    expect(emptyValue.toJSON()).toEqual({'Empty': undefined});
+    expect(emptyValue.toJSON()).toEqual({'Empty': {}});
   });
 
   test('match calls the correct callback for a variant', () => {

@@ -1,452 +1,260 @@
 # Iron Enum
 
+Super‑lightweight **Rust‑style tagged unions for TypeScript** — fully type‑safe, zero‑dependency, < 1 kB min+gz.
+
 [![GitHub Repo stars](https://img.shields.io/github/stars/only-cliches/iron-enum)](https://github.com/only-cliches/iron-enum)
 [![NPM Version](https://img.shields.io/npm/v/iron-enum)](https://www.npmjs.com/package/iron-enum)
 [![JSR Version](https://img.shields.io/jsr/v/%40onlycliches/iron-enum)](https://jsr.io/@onlycliches/iron-enum)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/iron-enum)](https://pkg-size.dev/iron-enum)
+[![npm package minimized gzipped size](https://badgen.net/bundlephobia/minzip/iron-enum)](https://bundlephobia.com/package/iron-enum@latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Iron Enum** is a lightweight library that brings [Rust-like](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html) tagged enums (also called algebraic data types or discriminated unions) to TypeScript. It provides a fluent, functional style for creating, inspecting, and pattern-matching on variant data structures — all with TypeScript’s strong type-checking at compile time.
+> **TL;DR**   Stop writing brittle `switch` statements or sprawling `if / else` chains.  Model your program’s states with expressive, type‑sound enums that compile down to **plain JavaScript objects with helper methods — no classes, no runtime bloat**.
 
-[Try Iron Enum Now - Free StackBlitz Sandbox](https://stackblitz.com/edit/iron-enum-sandbox?file=src%2Fmain.ts)
+[▶ Open playground](https://stackblitz.com/edit/iron-enum-sandbox?file=src/main.ts)
 
-## Table of Contents
+---
+
+## Table of Contents
+
 - [Iron Enum](#iron-enum)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Why Use This Library?](#why-use-this-library)
+  - [Table of Contents](#tableofcontents)
+  - [Why Iron Enum?](#whyironenum)
   - [Installation](#installation)
-  - [Basic Usage](#basic-usage)
-    - [Defining Variants](#defining-variants)
-    - [Creating Values](#creating-values)
-    - [Pattern Matching](#pattern-matching)
-    - [Conditional Checks (`if` / `ifNot`)](#conditional-checks-if--ifnot)
-    - [Async Pattern Matching](#async-pattern-matching)
-    - [Serialization \& Deserialization](#serialization--deserialization)
-  - [Advanced Examples](#advanced-examples)
-    - [Using Classes and Complex Objects](#using-classes-and-complex-objects)
-    - [Passing Enums as Arguments](#passing-enums-as-arguments)
-    - [Inferring Data Types](#inferring-data-types)
-  - [Option \& Result](#option--result)
-    - [Option](#option)
-      - [Creating Options](#creating-options)
-      - [Unwrap](#unwrap)
-      - [Unwrap with fallback](#unwrap-with-fallback)
-      - [Convert to Result](#convert-to-result)
-      - [Matching](#matching)
-    - [Result](#result)
-      - [Creating Results](#creating-results)
-      - [Unwrap](#unwrap-1)
-      - [Unwrap with fallback](#unwrap-with-fallback-1)
-      - [Convert to Option](#convert-to-option)
-      - [Matching](#matching-1)
-  - [Try Utility](#try-utility)
-    - [Features](#features-1)
-    - [Usage](#usage)
-      - [Synchronous Example](#synchronous-example)
-      - [Asynchronous Example](#asynchronous-example)
-    - [API](#api)
+  - [Quick Start](#quickstart)
+  - [Pattern Matching \& Guards](#patternmatching-guards)
+    - [Exhaustive `match`](#exhaustive-match)
+    - [Fluent `if.*` / `ifNot.*`](#fluent-if--ifnot)
+  - [Async Workflows](#asyncworkflows)
+  - [Option \& Result Helpers](#optionresult-helpers)
+  - [Try / TryInto Utilities](#try--tryinto-utilities)
+  - [Advanced Recipes](#advancedrecipes)
+  - [FAQ \& Trade‑offs](#faq-tradeoffs)
   - [Contributing](#contributing)
   - [License](#license)
+  - [Keywords](#keywords)
 
-## Features
+---
 
-- **Lightweight & Zero Dependencies:** A minimal, dependency-free implementation (~1k gzipped bytes) leveraging TypeScript’s advanced type system and Proxies.
-- **Type-Safe Tagged Variants:** Each variant is created with a unique tag and associated data, enforced at compile time by TypeScript.
-- **Powerful Pattern Matching:** Intuitive `match` / `matchAsync` methods eliminate the need for brittle switch statements or nested conditionals.
-- **Conditional Checks:** Minimal overhead for checking variants (via `if` / `ifNot`) in a readable style.
-- **Supports "Empty" Variants:** Easily represent states like `None` or `Empty` by defining a variant with `undefined`.
-- **Reduced Boilerplate:** The library handles the “discriminant” under the hood, cutting down on repetitive code.
-- **Built in Result & Option:** Built in `Result` and `Option` implementations that mirror their Rust equivalents along with utility methods like `.unwrap()` and `.unwrap_or_else()`.
+## Why Iron Enum?
 
-## Why Use This Library?
+* **Clarity** — Express all possible states in one place; TypeScript warns you when you forget a branch.
+* **Maintainability** — Adding a new variant *instantly* surfaces every site that needs to handle it.
+* **Functional Flair** — Great for FP‑oriented codebases or anywhere you want to banish `null` & friends.
+* **Safe Data Transport** — `toJSON()` / `_.parse()` make it effortless to serialize across the wire.
 
-- **Improved Code Clarity:** Handle your logic in one place using pattern matching, reducing scattered if-else blocks and clarifying your app’s possible states.
-- **Type Safety:** No more unverified type casts. TypeScript ensures that once you branch on a variant, you get the correct data type without extra checks.
-- **Maintainability & Scalability:** Adding or removing variants is simple—update your variant definitions, and TypeScript will highlight where changes are needed.
-- **Functional Style:** Iron Enum fits perfectly in FP-oriented codebases, or wherever you want to avoid `class`-based hierarchies and large frameworks.
-- **Great for Error Handling & State Management:** Pattern matching simplifies code that handles many possible outcomes.
+> **Native discriminated unions are great,** but they leave you to hand‑roll guards and pattern matching every time.  Iron Enum wraps the same type‑level guarantees in an ergonomic, reusable runtime API.
+
+---
 
 ## Installation
 
-Install via npm or yarn:
-
 ```bash
-npm install iron-enum
+npm i iron-enum
+# or
+pnpm add iron-enum
 # or
 yarn add iron-enum
 ```
 
-Then import and start defining your enums:
+---
 
-```ts
-import { IronEnum } from "iron-enum";
-```
-
-## Basic Usage
-
-### Defining Variants
-
-Suppose you want an enum-like type with three variants:
-- **Foo** contains an object `{ x: number }`
-- **Bar** contains a string
-- **Empty** contains no data (i.e., `undefined`)
+## Quick Start
 
 ```ts
 import { IronEnum } from "iron-enum";
 
-// 1. Define a record of variant keys to their associated data types
-type MyVariants = {
-  Foo: { x: number };
-  Bar: string;
-  Empty: undefined;
-};
+// 1. Declare your variants
+const Status = IronEnum<{
+  Idle:     undefined;
+  Loading:  undefined;
+  Done:     { items: number };
+}>();
 
-// 2. Construct an enum builder using IronEnum
-const MyEnum = IronEnum<MyVariants>();
-```
+// 2. Produce values
+const state = Status.Done({ items: 3 });
 
-### Creating Values
-
-You can create new enum values by calling the builder’s variant methods:
-
-```ts
-const fooValue = MyEnum.Foo({ x: 42 });
-const barValue = MyEnum.Bar("Hello");
-const emptyValue = MyEnum.Empty();
-```
-
-Each call returns a tagged object with helpful methods (e.g., `match`, `if`, `ifNot`, etc.).
-
-### Pattern Matching
-
-Handle each variant cleanly with `match`. You can also provide a fallback (`_`) if you wish:
-
-```ts
-fooValue.match({
-  Foo: (val) => {
-    // val is { x: number }
-    console.log("Foo with:", val.x);
-  },
-  Bar: (val) => {
-    console.log("Bar with:", val);
-  },
-  Empty: () => {
-    console.log("It's empty!");
-  },
-  _: () => {
-    // Optional fallback if you didn't specify all variants
-    console.log("No match found!");
-  }
+// 3. Handle them exhaustively
+state.match({
+  Idle:    ()            => console.log("No work yet."),
+  Loading: ()            => console.log("Crunching…"),
+  Done:    ({ items })   => console.log(`Completed with ${items} items.`),
 });
+
+// 4. Handle as args
+const handleLoadingState = (stateInstance: typeof Status._.typeOf) => { /* .. */ }
+handleLoadingState(state);
 ```
 
-### Conditional Checks (`if` / `ifNot`)
+---
 
-`if` and `ifNot` let you quickly test if a variant matches (or doesn’t match) a specific key, and optionally run callbacks.
+## Pattern Matching & Guards
+
+### Exhaustive `match`
 
 ```ts
-// 1. Returns true/false by default
-const isFoo = fooValue.if.Foo(); 
-// isFoo === true if fooValue.tag === 'Foo', otherwise false
+// branching
+value.match({
+  Foo:  (x) => doSomething(x),
+  Bar:  (s) => console.log(s),
+  _:    ()  => fallback(), // optional catch‑all
+});
 
-// 2. Optional callbacks
-fooValue.if.Foo(
-  (val) => { // called if enum is "Foo" variant.
-    console.log("Yes, it's Foo:", val.x);
-    return "someReturnValue";
-  }, // else:
-  (json) => {
-    // json is { Bar?: string, Empty?: undefined, Foo?: { x: number } }
-    return "elseReturnValue";
-  }
+// return with type inference
+const returnValue = value.match({
+  Foo:  (x) => x,
+  Bar:  (s) => s,
+  _:    ()  => null
+});
+// typeof returnValue == x | s | null
+```
+
+### Fluent `if.*` / `ifNot.*`
+
+```ts
+// branching
+value.if.Foo(
+  ({ count }) => console.log(`It *is* Foo with ${count}`),
+  ()          => console.log("It is NOT Foo"),
 );
-// The return value is inferred. If you provide returns, you'll get that union type back.
 
-fooValue.ifNot.Bar(() => {
-  console.log("Definitely not a Bar variant!");
-});
-```
+// return through callbacks with type inference
+const isNumber = value.if.Foo( 
+  // if true
+  ({ count }) => count,
+  // if false
+  ()          => 0,
+);
 
-### Async Pattern Matching
-
-When working with async logic, use `matchAsync`. Each branch callback should return a `Promise` (or use `async`):
-
-```ts
-const result = await barValue.matchAsync({
-  Foo: async (val) => {
-    // Handle Foo asynchronously
-    return await fetchSomeData(val);
-  },
-  Bar: async (val) => {
-    // Handle Bar asynchronously
-    return "barValue resolved";
-  },
-  Empty: async () => {
-    await doSomethingAsync();
-    return "Handled Empty";
-  },
-  _: async () => "Default fallback"
-});
- // return type is inferred from match arm functions
-console.log("Async match result:", result);
-```
-
-### Serialization & Deserialization
-
-Iron Enum values can be easily serialized to JSON (or sent across the network) by using `toJSON()`. To get them back into an Iron Enum value, you can call `parse` on the builder’s `_` property.
-
-```ts
-const simpleEnum = IronEnum<{
-  foo: { text: string };
-  bar: { title: string };
-}>();
-
-const originalValue = simpleEnum.foo({ text: "hello" });
-const jsonValue = originalValue.toJSON(); 
-// jsonValue is now { foo: { text: "hello" } }
-
-const parsedValue = simpleEnum._.parse(jsonValue);
-// parsedValue is again a fully featured Iron Enum variant 
-parsedValue.match({
-  foo: (val) => console.log("Parsed back successfully:", val),
-  _: () => {}
-});
-```
-
-## Advanced Examples
-
-### Using Classes and Complex Objects
-
-Iron Enum variants can contain anything: classes, nested objects, arrays, or even other Iron Enums.
-
-```ts
-class SimpleClass {
-  constructor(public name: string) {}
+// in statement, callbacks optional
+if (value.if.Foo()) {
+  // value is Foo!
+} else {
+  // value is NOT Foo!
 }
-
-const nestedEnum = IronEnum<{ alpha: number; beta: string }>();
-
-const complexEnum = IronEnum<{
-  test: typeof nestedEnum._.typeOf;
-  aClass: SimpleClass;
-  nestedData: {
-    foo: string;
-    bar: string;
-    array: { someProperty: string; anotherProperty: number }[];
-  };
-}>();
-
-const myInstance = complexEnum.aClass(new SimpleClass("TestName"));
-const myNested = complexEnum.test(nestedEnum.alpha(42));
 ```
 
-### Passing Enums as Arguments
-
-One of the biggest perks is that you can pass these enums around, and the type system will protect you from invalid usage:
-
-```ts
-const testEnum = IronEnum<{ foo: string; bar: string }>();
-
-function handleTestEnum(value: typeof testEnum._.typeOf) {
-  // Now we can pattern-match safely
-  return value.match({
-    foo: (val) => `Got foo: ${val}`,
-    bar: (val) => `Got bar: ${val}`,
-  });
-}
-
-const result = handleTestEnum(testEnum.foo("Hello!"));
-console.log(result); // "Got foo: Hello!"
-```
-
-### Inferring Data Types
-
-TypeScript automatically infers the data type for each branch when you match on an Iron Enum. You can also create custom types to extract payload information:
-
-```ts
-const myEnum = IronEnum<{ Foo: { x: number }; Bar: string }>();
-const fooValue = myEnum.Foo({ x: 42 });
-
-type InferFooDataType<X extends typeof myEnum._.typeOf> =
-  X extends { tag: "Foo"; data: infer Payload }
-    ? Payload
-    : never;
-
-type Inferred = InferFooDataType<typeof fooValue>;
-// Inferred = { x: number } 
-```
-
-## Option & Result
-
-Iron Enum includes convenient implementations for two common patterns: `Option` and `Result`.
-Absolutely! Here’s a set of clear and practical usage examples for the `Option` and `Result` types that you can include in your README to help users understand how to use your library effectively.
+Both helpers return the callback’s result *or* a boolean when you omit callbacks, so they slot neatly into expressions.
 
 ---
 
-### Option
+## Async Workflows
 
-The `Option` type is useful for representing values that may or may not exist.
-
-#### Creating Options
+Need to await network calls inside branches?  Use `matchAsync`:
 
 ```ts
-const NumberOption = Option<number>();
-
-const some = NumberOption.Some(42);
-const none = NumberOption.None();
-```
-
-#### Unwrap
-
-```ts
-some.unwrap(); // 42
-none.unwrap(); // ❌ throws: Called .unwrap() on an Option.None enum!
-```
-
-#### Unwrap with fallback
-
-```ts
-some.unwrap_or(100);       // 42
-none.unwrap_or(100);       // 100
-
-some.unwrap_or_else(() => 999); // 42
-none.unwrap_or_else(() => 999); // 999
-```
-
-#### Convert to Result
-
-```ts
-const OkOrErr = some.ok_or("Not found");   // Ok(42)
-const ErrRes = none.ok_or("Not found");    // Err("Not found")
-
-const OkOrErrLazy = some.ok_or_else(() => "fail"); // Ok(42)
-const ErrResLazy = none.ok_or_else(() => "fail");  // Err("fail")
-```
-
-#### Matching
-
-```ts
-some.match({
-    Some: (val) => `Value is ${val}`,
-    None: () => "No value"
-}); // "Value is 42"
-
-none.match({
-    Some: (val) => `Value is ${val}`,
-    None: () => "No value"
-}); // "No value"
+await status.matchAsync({
+  Idle:    async () => cache.get(),
+  Loading: async () => await poll(),
+  Done:    async ({ items }) => items,
+});
 ```
 
 ---
 
-### Result
-
-The `Result` type is useful for returning either a success value (`Ok`) or an error (`Err`).
-
-#### Creating Results
+## Option & Result Helpers
 
 ```ts
-const NumResult = Result<number, string>();
+import { Option, Result } from "iron-enum";
 
-const ok = NumResult.Ok(123);
-const err = NumResult.Err("Something went wrong");
+// Option<T>
+const MaybeNum = Option<number>();
+const some = MaybeNum.Some(42);
+const none = MaybeNum.None();
+
+console.log(some.unwrap());        // 42
+console.log(none.unwrap_or(0));    // 0
+
+// Result<T, E>
+const NumOrErr = Result<number, Error>();
+const ok  = NumOrErr.Ok(123);
+const err = NumOrErr.Err(new Error("Boom"));
+
+ok.match({ Ok: (v) => v, Err: console.error });
 ```
 
-#### Unwrap
+The helper instances expose Rust‑style sugar (`isOk()`, `isErr()`, `ok()`, etc.) while still being regular Iron Enum variants under the hood.
+
+---
+
+## Try / TryInto Utilities
+
+Run any operation that may throw and return it as a `Result` type:
 
 ```ts
-ok.unwrap(); // 123
-err.unwrap(); // ❌ throws: Called .unwrap() on a Result.Err enum!
-```
-
-#### Unwrap with fallback
-
-```ts
-ok.unwrap_or(0);        // 123
-err.unwrap_or(0);       // 0
-
-ok.unwrap_or_else(() => 999);   // 123
-err.unwrap_or_else(() => 999);  // 999
-```
-
-#### Convert to Option
-
-```ts
-const SomeOpt = ok.ok();   // Some(123)
-const NoneOpt = err.ok();  // None()
-```
-
-#### Matching
-
-```ts
-ok.match({
-    Ok: (val) => `Success: ${val}`,
-    Err: (e) => `Failure: ${e}`
-}); // "Success: 123"
-
-err.match({
-    Ok: (val) => `Success: ${val}`,
-    Err: (e) => `Failure: ${e}`
-}); // "Failure: Something went wrong"
-```
-
-## Try Utility
-
-The `Try` utility provides a convenient way to wrap both synchronous and asynchronous function calls in a typed `Result`, avoiding the need for `try/catch` blocks and making error handling more expressive and composable.
-
-### Features
-
-* Clean, centralized error handling
-* Works with both sync and async functions
-* Fully type-safe with discriminated union support (`Ok` / `Err`)
-
-### Usage
-
-#### Synchronous Example
-
-```ts
-import { Try } from 'IronEnum';
+import { Try } from "iron-enum";
 
 const result = Try.sync(() => {
-    if (Math.random() > 0.5) throw new Error("Unlucky!");
-    return "Success!";
+  // risk stuffy that might throw new Error()
 });
 
-if (result.isOk()) {
-    console.log("Result:", result.value);
-} else {
-    console.error("Error:", result.error.message);
-}
+if (result.if.Ok()) { /* … */ }
 ```
 
-#### Asynchronous Example
+Or create a new function that may throw that always returns a `Result`.
 
 ```ts
-const result = await Try.async(async () => {
-    const res = await fetch("/api/data");
-    return res.json();
+import { TryInto } from "iron-enum";
+
+const safeParseInt = TryInto.sync((s: string) => {
+  const n = parseInt(s, 10);
+  if (Number.isNaN(n)) throw new Error("NaN");
+  return n;
 });
 
-if (result.isOk()) {
-    console.log("Data:", result.value);
-} else {
-    console.error("Fetch failed:", result.error.message);
-}
+const result = safeParseInt("55");
+result.if.Ok((value) => {
+  console.log(value) // 55;
+})
 ```
 
-### API
+`Try` and `TryInto` also have async variants that work with `Promises` and `async/await`.
 
-```ts
-Try.sync:  <X>(fn: () => X) => ResultFactory<{ Ok: X; Err: Error }>
-Try.async: <X>(fn: () => Promise<X>) => Promise<ResultFactory<{ Ok: X; Err: Error }>>
-```
+---
 
+## Advanced Recipes
+
+* **Nested Enums** — compose enums inside payloads for complex state machines.
+* **Optional‑object payloads** — if *all* payload keys are optional, the constructor arg becomes optional: `E.Query()` == `E.Query({})`.
+* **Serialization** — `enum.toJSON()` ➜ `{ Variant: payload }`, and `Enum._.parse(obj)` brings it back.
+* **Type Extraction** — `typeof MyEnum._.typeOf` gives you the union type of all variants.
+
+---
+
+## FAQ & Trade‑offs
+
+<details>
+<summary>Does Iron Enum add runtime overhead?</summary>
+
+No. Each constructed value is a plain object `{ tag, data, …helpers }`. The helper methods are closures created once per value; for most apps this is negligible compared with the clarity you gain.
+
+</details>
+
+<details>
+<summary>Why not stick with vanilla TypeScript unions?</summary>
+
+Vanilla unions keep *types* safe but leave *guards* up to you.  Iron Enum bakes common guard logic into reusable helpers and ensures your match statements stay exhaustive.
+
+</details>
+
+<details>
+<summary>Can I tree‑shake out helpers I don’t use?</summary>
+
+Yes. Because everything is property‑based access on the enum instance, dead‑code elimination removes unused helpers in modern bundlers.
+
+</details>
+
+---
 
 ## Contributing
 
-Contributions, suggestions, and feedback are welcome! Please open an issue or submit a pull request on the [GitHub repository](https://github.com/only-cliches/iron-enum).
+PRs and issues are welcome!
+
+---
 
 ## License
 
-This library is available under the [MIT license](./LICENSE). See the LICENSE file for details.
+MIT © Scott Lott
+
+## Keywords
+typescript, enum, tagged union, tagged unions, discriminated union, algebraic data type, adt, sum type, union types, rust enums, rust, pattern matching, option type, result type, functional programming

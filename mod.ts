@@ -1,4 +1,42 @@
 /**
+ * # IronEnum
+ * A **zero‑dependency** helper that brings *Rust‑like tagged unions* (aka algebraic data
+ * types) to TypeScript **while staying 100 % runtime‑light**.  You get:
+ *
+ * * **Ergonomic, type‑safe constructors** – payload gets the right shape or you don’t compile.
+ * * **Pattern‑matching helpers** (`match`, `matchAsync`).
+ * * **Fluent guards** (`if.*`, `ifNot.*`).
+ * * **Rust‑inspired convenience wrappers** – `Option`, `Result`, `Try`, `TryInto`.
+ * * **Smart payload rules** – when *every* property of the payload object is optional the
+ *   argument itself becomes optional, so `Enum.Variant()` and `Enum.Variant({})` are both
+ *   legal.
+ *
+ * ```ts
+ * const Status = IronEnum<{
+ *   Loading: undefined
+ *   Ready:   { finishedAt: Date }
+ * }>();
+ *
+ * const a = Status.Loading();                  // no payload
+ * const b = Status.Ready({ finishedAt: new Date() });
+ *
+ * console.log(a.match({
+ *   Loading: () => "still working…",
+ *   Ready:   ({ finishedAt }) => `done at ${finishedAt}`,
+ * }));
+ * ```
+ *
+ * ## Table of contents (public surface)
+ * 1. `IronEnum` – generic builder
+ * 2. `EnumFactory` / `EnumMethods` – runtime value API (guards + matchers)
+ * 3. `Option`, `Some`, `None` – maybe‑value helpers
+ * 4. `Result`, `Ok`, `Err` – success/error helpers
+ * 5. `Try`, `TryInto` – convert imperative `throw`s into functional `Result`s
+ *
+ * ---------------------------------------------------------------------------
+ */
+
+/**
  * A record of possible variants, each key mapping to its associated data type.
  * 
  * Example:
@@ -19,6 +57,32 @@ type EnumUnion<ALL extends VariantsRecord> = {
 export type EnumFactoryUnion<ALL extends VariantsRecord> = {
     [K in keyof ALL & string]: EnumFactory<K, ALL[K], ALL>;
 }[keyof ALL & string];
+
+
+/** `true` when `T` is an object *and* every key is optional */
+type IsAllOptionalObject<T> =
+    T extends object                    // must be object-like
+    ? ({} extends T                   // `{}` satisfies it ⇒ every key is optional
+        ? true
+        : false)
+    : false;
+
+type VariantCtor<
+    T,                         // payload type
+    K extends string,
+    ALL extends VariantsRecord // whole enum
+> =
+    // no-data variants stay 0-arg
+    [T] extends [undefined | null | void]
+    ? () => EnumFactory<K, T, ALL>
+
+    // object whose **all** props are optional  →  parameter itself is optional
+    : IsAllOptionalObject<T> extends true
+    ? (data?: T) => EnumFactory<K, T, ALL>
+
+    // every other payload must still be supplied
+    : (data: T) => EnumFactory<K, T, ALL>;
+
 
 /**
  * Represents a single constructed enum value.
@@ -363,9 +427,7 @@ export type IronEnumInstance<ALL extends VariantsRecord> = {
      * For a variant key that has associated data, call it like `MyEnum.Foo("myData")`.
      * If the variant has no data, call it like `MyEnum.None()`.
      */
-    [K in keyof ALL & string]: ALL[K] extends undefined | null | void
-    ? () => EnumFactory<K, ALL[K], ALL>
-    : (data: ALL[K]) => EnumFactory<K, ALL[K], ALL>;
+    [K in keyof ALL & string]: VariantCtor<ALL[K], K, ALL>;
 } & {
     /**
      * A special property containing meta-information and helper methods for the enum, 
@@ -419,12 +481,13 @@ export function IronEnum<ALL extends VariantsRecord>(): "_" extends keyof ALL ? 
                 });
             }
 
-            return (payload: any) => {
-                return enumFactory<ALL, typeof prop>(
-                    {} as ALL,
-                    prop,
-                    payload
-                );
+            return (...args: [any?]) => {
+                // if caller omitted the argument *and* the payload type is an object,
+                // inject an empty object so runtime matches the static type
+                const data =
+                    args.length === 0 ? ({} as ALL[typeof prop]) : (args[0] as ALL[typeof prop]);
+
+                return enumFactory<ALL, typeof prop>({} as ALL, prop, data);
             };
         }
     }) as any;
@@ -461,7 +524,15 @@ type ResultMethods<ALL extends { Ok: unknown, Err: unknown }> = {
     /**
      * Converts an `Ok` variant into `Some`, or an `Err` variant into `None`.
      */
-    ok: () => OptionFactory<{ Some: ALL["Ok"], None: undefined }>
+    ok: () => OptionFactory<{ Some: ALL["Ok"], None: undefined }>,
+    /**
+     * Returns if the current Result is Ok.
+     */
+    isOk: () => boolean,
+    /**
+     * Returns if the current Result is Err.
+     */
+    isErr: () => boolean
 };
 
 /**
@@ -527,6 +598,8 @@ export const Result = <T, E>(): ResultInstance<{ Ok: T, Err: E }> => (() => {
             ...resultEnum.Ok(value),
             unwrap: () => value,
             unwrap_or: x => value,
+            isOk: () => true,
+            isErr: () => false,
             unwrap_or_else: x => value,
             ok: () => Option<T>().Some(value)
         }),
@@ -543,6 +616,8 @@ export const Result = <T, E>(): ResultInstance<{ Ok: T, Err: E }> => (() => {
                     throw new Error(`Called .unwrap() on an Result.Err enum!`);
                 }
             },
+            isOk: () => false,
+            isErr: () => true,
             unwrap_or: x => x,
             unwrap_or_else: x => x(),
             ok: () => Option<T>().None()
@@ -591,6 +666,14 @@ type OptionMethods<OK> = {
      * Similar to `ok_or`, but takes a function that returns the error.
      */
     ok_or_else: <E>(error: () => E) => ResultFactory<{ Ok: OK, Err: E }>
+    /**
+     * Returns is Option value is Some.
+     */
+    isSome: () => boolean,
+    /**
+     * Returns is Option value is None
+     */
+    isNone: () => boolean,
 };
 
 /**
@@ -637,6 +720,8 @@ export const Option = <T>(): OptionInstance<{ Some: T, None: undefined }> => (()
         _: optEnum._ as any,
         Some: (value: T) => ({
             ...optEnum.Some(value),
+            isSome: () => true,
+            isNone: () => false,
             unwrap: () => value,
             unwrap_or: x => value,
             unwrap_or_else: x => value,
@@ -646,6 +731,8 @@ export const Option = <T>(): OptionInstance<{ Some: T, None: undefined }> => (()
         }),
         None: () => ({
             ...optEnum.None(),
+            isSome: () => false,
+            isNone: () => true,
             unwrap: () => {
                 throw new Error(`Called .unwrap() on an Option.None enum!`);
             },
@@ -689,7 +776,7 @@ export const None = (): OptionFactory<{ Some: unknown, None: undefined }> => Opt
  * ## Example (Sync):
  * ```ts
  * const result = Try.sync(() => riskyOperation());
- * if (result.isOk()) {
+ * if (result.if.Ok()) {
  *     console.log("Success:", result.value);
  * } else {
  *     console.error("Error:", result.error);
@@ -699,7 +786,7 @@ export const None = (): OptionFactory<{ Some: unknown, None: undefined }> => Opt
  * ## Example (Async):
  * ```ts
  * const result = await Try.async(() => fetchData());
- * if (result.isOk()) {
+ * if (result.if.Ok()) {
  *     console.log("Fetched:", result.value);
  * } else {
  *     console.error("Fetch failed:", result.error);
@@ -713,20 +800,89 @@ export const None = (): OptionFactory<{ Some: unknown, None: undefined }> => Opt
  *                   returns a `Promise<ResultFactory>` containing the result or error.
  */
 export const Try = {
-    sync: <X>(callback: () => X): ResultFactory<{Ok: X, Err: Error}> => {
+    sync: <X>(callback: () => X): ResultFactory<{ Ok: X, Err: unknown }> => {
         try {
             const output = callback();
-            return Result<X, Error>().Ok(output);
+            return Result<X, unknown>().Ok(output);
         } catch (e: any) {
-            return Result<X, Error>().Err(e as Error)
+            return Result<X, unknown>().Err(e as unknown)
         }
     },
-    async: async <X>(callback: () => Promise<X>): Promise<ResultFactory<{Ok: X, Err: Error}>> => {
+    async: async <X>(callback: () => Promise<X>): Promise<ResultFactory<{ Ok: X, Err: unknown }>> => {
         try {
             const output = await callback();
-            return Result<X, Error>().Ok(output);
+            return Result<X, unknown>().Ok(output);
         } catch (e: any) {
-            return Result<X, Error>().Err(e as Error)
+            return Result<X, unknown>().Err(e as unknown)
+        }
+    }
+}
+
+/**
+ * A higher-order utility that converts a function (sync or async) into one that
+ * returns a `Result` instead of throwing exceptions. This is especially useful
+ * when you want to consistently return a safe result wrapper from potentially
+ * failing operations, while preserving the original function signature.
+ *
+ * This differs from `Try` by returning a **new function** rather than calling
+ * the function immediately.
+ *
+ * ## Example (Sync):
+ * ```ts
+ * const parseIntSafe = TryInto.sync((str: string) => {
+ *   const num = parseInt(str);
+ *   if (isNaN(num)) throw new Error("Invalid number");
+ *   return num;
+ * });
+ *
+ * const result = parseIntSafe("42");
+ * if (result.if.Ok()) {
+ *  console.log(result.value);
+ * } else {
+ *  console.error(result.error)
+ * }
+ * ```
+ *
+ * ## Example (Async):
+ * ```ts
+ * const fetchSafe = TryInto.async(async (url: string) => {
+ *   const res = await fetch(url);
+ *   if (!res.ok) throw new Error("Bad response");
+ *   return res.json();
+ * });
+ *
+ * const result = await fetchSafe("/api/data");
+ * if (result.if.Ok()) {
+ *  console.log(result.value);
+ * } else {
+ *  console.log(result.error);
+ * }
+ * ```
+ *
+ * @property sync - Wraps a synchronous function and returns a new function
+ *                  that returns a `Result` instead of throwing.
+ * @property async - Wraps an asynchronous function and returns a new function
+ *                   that returns a `Promise<Result>` instead of rejecting.
+ */
+export const TryInto = {
+    sync: <X, Y extends any[]>(callback: (...args: Y) => X): ((...args: Y) => ResultFactory<{ Ok: X, Err: unknown }>) => {
+        return (...args: Y) => {
+            try {
+                const output = callback(...args);
+                return Result<X, unknown>().Ok(output);
+            } catch (e: any) {
+                return Result<X, unknown>().Err(e as unknown)
+            }
+        }
+    },
+    async: <X, Y extends any[]>(callback: (...args: Y) => Promise<X>): ((...args: Y) => Promise<ResultFactory<{ Ok: X, Err: unknown }>>) => {
+        return async (...args: Y) => {
+            try {
+                const output = await callback(...args);
+                return Result<X, unknown>().Ok(output);
+            } catch (e: any) {
+                return Result<X, unknown>().Err(e as unknown)
+            }
         }
     }
 }
