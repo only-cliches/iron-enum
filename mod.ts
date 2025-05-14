@@ -67,22 +67,26 @@ type IsAllOptionalObject<T> =
         : false)
     : false;
 
-type VariantCtor<
-    T,                         // payload type
-    K extends string,
-    ALL extends VariantsRecord // whole enum
+
+type VariantConstructor<
+  Default,     
+  K extends string,
+  ALL extends VariantsRecord
 > =
-    // no-data variants stay 0-arg
-    [T] extends [undefined | null | void]
-    ? () => EnumFactory<K, T, ALL>
+  /* no-data variants stay 0-arg */
+  [Default] extends [undefined | null | void]
+    ? () => EnumFactory<K, Default, ALL>
 
-    // object whose **all** props are optional  →  parameter itself is optional
-    : IsAllOptionalObject<T> extends true
-    ? (data?: T) => EnumFactory<K, T, ALL>
+  /* all-optional object -> parameter *may* be omitted */
+  : IsAllOptionalObject<Default> extends true
+      ? <P extends Default = Default>(
+            data?: P
+        ) => EnumFactory<K, P, ALL>
 
-    // every other payload must still be supplied
-    : (data: T) => EnumFactory<K, T, ALL>;
-
+  /* everything else - payload required */
+  : <P extends Default>(
+        data: P
+    ) => EnumFactory<K, P, ALL>;
 
 /**
  * Represents a single constructed enum value.
@@ -98,11 +102,12 @@ type VariantCtor<
  */
 export type EnumFactory<
     TAG extends keyof ALL & string,
-    PAYLOD,
+    PAYLOAD,
     ALL extends VariantsRecord
 > = {
     tag: TAG;
     data: EnumUnion<ALL>;
+    payload: PAYLOAD;
 } & EnumMethods<ALL>;
 
 /**
@@ -313,6 +318,7 @@ function enumFactory<
     return {
         tag,
         data: data,
+        payload: data,
         toJSON: () => ({ [tag]: data } as unknown as Partial<ALL>),
         key: () => tag,
         if: new Proxy({} as ObjectToIfMap<ALL>, {
@@ -427,7 +433,7 @@ export type IronEnumInstance<ALL extends VariantsRecord> = {
      * For a variant key that has associated data, call it like `MyEnum.Foo("myData")`.
      * If the variant has no data, call it like `MyEnum.None()`.
      */
-    [K in keyof ALL & string]: VariantCtor<ALL[K], K, ALL>;
+    [K in keyof ALL & string]: VariantConstructor<ALL[K], K, ALL>;
 } & {
     /**
      * A special property containing meta-information and helper methods for the enum, 

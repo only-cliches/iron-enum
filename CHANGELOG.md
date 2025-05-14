@@ -1,6 +1,10 @@
 # Change Log
 
-## 1.6.0
+## 1.6.1 May 13, 2025
+- Fixed Readme duplicate for license tag.
+- Added examples in Github
+
+## 1.6.0 May 7, 2025
 - Cleaned up doc examples.
 - Added `isOk`, `isErr` to `Result` type.
 - Added `isSome`, `isNone` to `Option` type.
