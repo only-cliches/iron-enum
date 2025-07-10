@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.6.2 July 10, 2025
+- Added `factory` property to expose constructor.
+- Updated examples.
+- Added helper function to generate new enums from inside existing enums.
+- More better tests.
+- Cleaned up code comments.
+- Keys can now be passed to the enum constructor to remove the need for a proxy.
+- **BREAKING CHANGE** `if` and `ifNot` have been changed from `someEnum.if.variant(...callbacks)` to `someEnum.if("variant", ...callbacks)`.  This removes the proxies from the enum implmentation to improve performance.
+
 ## 1.6.1 May 13, 2025
 - Fixed Readme duplicate for license tag.
 - Added examples in Github

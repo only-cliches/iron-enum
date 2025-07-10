@@ -5,7 +5,7 @@
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "minify": "npx terser dist/mod.js --compress --mangle --output dist/mod.min.js",
     "build": "tsc",
     "size": "gzip -c dist/mod.min.js | wc -c"
@@ -33,9 +33,10 @@
     "functional programming"
   ],
   "devDependencies": {
-    "@types/jest": "^29.5.14",
+    "@types/jest": "^30.0.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.5"
-  },
-  "dependencies": {}
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
 }
