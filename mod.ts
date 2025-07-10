@@ -372,7 +372,10 @@ export type ResultInstance<ALL extends { Ok: unknown; Err: unknown }> = {
 };
 
 /** Result constructor (`Ok` | `Err`). */
-export const Result = <T, E>(): ResultInstance<{ Ok: T; Err: E }> => {
+export const Result: <T, E>() => ResultInstance<{
+    Ok: T;
+    Err: E;
+}> = <T, E>(): ResultInstance<{ Ok: T; Err: E }> => {
   const R = IronEnum<{ Ok: T; Err: E }>();
   return {
     _: R._ as any,
@@ -404,10 +407,16 @@ export const Result = <T, E>(): ResultInstance<{ Ok: T; Err: E }> => {
 };
 
 /** Convenience `Ok(...)`. */
-export const Ok = <T>(value: T) => Result<T, unknown>().Ok(value);
+export const Ok: <T>(value: T) => ResultFactory<{
+    Ok: T;
+    Err: unknown;
+}> = <T>(value: T) => Result<T, unknown>().Ok(value);
 
 /** Convenience `Err(...)`. */
-export const Err = <E>(error: E) => Result<unknown, E>().Err(error);
+export const Err: <E>(error: E) => ResultFactory<{
+    Ok: unknown;
+    Err: E;
+}> = <E>(error: E) => Result<unknown, E>().Err(error);
 
 // -----------------------------------------------------------------------------
 // Rust‑style Option
@@ -435,7 +444,10 @@ export type OptionInstance<ALL extends { Some: unknown; None: undefined }> = {
 };
 
 /** Option constructor (`Some` | `None`). */
-export const Option = <T>(): OptionInstance<{ Some: T; None: undefined }> => {
+export const Option: <T>() => OptionInstance<{
+    Some: T;
+    None: undefined;
+}> = <T>(): OptionInstance<{ Some: T; None: undefined }> => {
   const O = IronEnum<{ Some: T; None: undefined }>();
   return {
     _: O._ as any,
@@ -467,16 +479,31 @@ export const Option = <T>(): OptionInstance<{ Some: T; None: undefined }> => {
 };
 
 /** Convenience `Some(...)`. */
-export const Some = <T>(value: T) => Option<T>().Some(value);
+export const Some: <T>(value: T) => OptionFactory<{
+    Some: T;
+    None: undefined;
+}> = <T>(value: T) => Option<T>().Some(value);
 
 /** Convenience `None()` (no payload). */
-export const None = () => Option().None();
+export const None: () => OptionFactory<{
+    Some: unknown;
+    None: undefined;
+}> = () => Option().None();
 
 // -----------------------------------------------------------------------------
 // Try / TryInto helpers
 // -----------------------------------------------------------------------------
 
-export const Try = {
+export const Try: {
+    sync<X>(cb: () => X): ResultFactory<{
+        Ok: X;
+        Err: unknown;
+    }>;
+    async<X>(cb: () => Promise<X>): Promise<ResultFactory<{
+        Ok: X;
+        Err: unknown;
+    }>>;
+} = {
   /** Wrap a synchronous callback, returning `Result`. */
   sync<X>(cb: () => X): ResultFactory<{ Ok: X; Err: unknown }> {
     try {
@@ -497,7 +524,16 @@ export const Try = {
   },
 };
 
-export const TryInto = {
+export const TryInto: {
+    sync<X, Y extends any[]>(cb: (...args: Y) => X): (...args: Y) => ResultFactory<{
+        Ok: X;
+        Err: unknown;
+    }>;
+    async<X, Y extends any[]>(cb: (...args: Y) => Promise<X>): (...args: Y) => Promise<ResultFactory<{
+        Ok: X;
+        Err: unknown;
+    }>>;
+} = {
   /** Lift a sync function into one returning `Result`. */
   sync<X, Y extends any[]>(cb: (...args: Y) => X) {
     return (...args: Y) => Try.sync(() => cb(...args));
