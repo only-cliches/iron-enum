@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.6.3 July 11, 2025
+- README and code documentation improvements.
+
 ## 1.6.2 July 10, 2025
 - Added `factory` property to expose constructor.
 - Updated examples.
