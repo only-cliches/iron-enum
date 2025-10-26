@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.7.0
+- Minor bugfixes.
+- README improvements.
+- Added React, Vue and SolidJS helpers.
+- Added Zod helper
+
 ## 1.6.3 July 11, 2025
 - README and code documentation improvements.
 

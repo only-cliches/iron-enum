@@ -1,0 +1,21 @@
+{
+  "name": "iron-enum-react",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/mod.js",
+  "types": "dist/mod.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "iron-enum": "^1.6.3",
+    "react": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2"
+  }
+}

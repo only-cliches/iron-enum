@@ -1,4 +1,4 @@
-# Iron Enum
+# 🦾 Iron Enum
 
 Super‑lightweight **Rust‑style tagged unions for TypeScript** — fully type‑safe, zero‑dependency, < 1 kB min+gz.
 
@@ -13,6 +13,30 @@ IronEnum lets you model expressive enums (a.k.a. tagged unions) in plain TypeScr
 
 [▶ Open playground](https://stackblitz.com/edit/iron-enum-sandbox?file=src/main.ts)
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+- [Built-in Types](#built-in-types)
+  - [Result<T, E>](#resultt-e)
+  - [Option<T>](#optiont)
+  - [Try and TryInto](#try-and-tryinto)
+- [EcoSystem Helpers](#ecosystem-helpers)
+  - [Zod](#zod)
+  - [React / SolidJS](#react--solidjs)
+  - [Vue](#vue)
+- [Advanced Usage](#advanced-usage)
+  - [Async Pattern Matching](#async-pattern-matching)
+  - [Serialization & Parsing](#serialization--parsing)
+  - [Type Guards](#type-guards-and-narrowing)
+  - [Performance](#performance-optimization)
+- [API Reference](#api-reference)
+- [Best Practices](#best-practices)
+- [Examples](#examples)
+
+
 ## Features
 
 - 🦀 **Rust-inspired** - Familiar `Result`, `Option`, and pattern matching
@@ -22,6 +46,7 @@ IronEnum lets you model expressive enums (a.k.a. tagged unions) in plain TypeScr
 - 🎮 **Pattern matching** - Exhaustive `match` and `matchAsync` methods
 - 🛡️ **Error handling** - Built-in `Try` and `TryInto` utilities
 
+
 ## Installation
 
 ```bash
@@ -30,7 +55,7 @@ npm install iron-enum
 yarn add iron-enum
 # or
 pnpm add iron-enum
-```
+````
 
 ## Quick Start
 
@@ -56,6 +81,7 @@ const message = ready.match({
   Error: ({ message }) => `Failed: ${message}`
 });
 ```
+
 
 ## Core Concepts
 
@@ -143,9 +169,10 @@ auth.ifNot(
 );
 ```
 
+
 ## Built-in Types
 
-### Result<T, E>
+### Result\<T, E\>
 
 Rust-style error handling:
 
@@ -173,19 +200,20 @@ console.log(result.unwrap());      // 5
 console.log(result.unwrap_or(0));  // 5
 ```
 
-### Option<T>
+### Option\<T\>
 
 Nullable value handling:
 
 ```ts
 import { Option, Some, None } from 'iron-enum';
 
-function findUser(id: string): Option<User> {
-  const user = database.find(u => u.id === id);
-  return user ? Some(user) : None();
-}
+// Assumes 'User' type is defined elsewhere
+// function findUser(id: string): Option<User> {
+//   const user = database.find(u => u.id === id);
+//   return user ? Some(user) : None();
+// }
 
-const userOption = findUser("123");
+const userOption = Some({ id: "123", name: "Alice" }); // Example
 
 // Convert to Result
 const userResult = userOption.ok_or("User not found");
@@ -221,7 +249,7 @@ const asyncResult = await Try.async(async () => {
 
 // Transform existing functions
 const safeParse = TryInto.sync(JSON.parse);
-const safeReadFile = TryInto.async(fs.promises.readFile);
+// const safeReadFile = TryInto.async(fs.promises.readFile); // Example for Node.js
 
 // Use the wrapped functions
 const parseResult = safeParse('{"key": "value"}');
@@ -230,6 +258,121 @@ parseResult.match({
   Err: (error) => console.log("Parse failed:", error)
 });
 ```
+
+
+## EcoSystem Helpers
+
+### Zod (`iron-enum-zod`)
+
+For runtime validation (e.g., parsing API responses), you can use the `iron-enum-zod` helper to create an `IronEnum` and a `zod` schema from a single definition.
+
+```bash
+npm install iron-enum-zod zod
+```
+
+This gives you a single, powerful factory with constructors and parsing methods.
+
+```ts
+import { z } from 'zod';
+import { createZodEnum } from 'iron-enum-zod';
+
+// 1. Define your payload schemas using Zod
+const StatusPayloads = {
+  Loading: z.undefined(),
+  Ready: z.object({ finishedAt: z.date() }),
+  Error: z.object({ message: z.string(), code: z.number() }),
+};
+
+// 2. Create the enhanced enum factory
+const Status = createZodEnum(StatusPayloads);
+
+// 3. You get all the standard constructors
+const ready = Status.self.Ready({ finishedAt: new Date() });
+
+// 4. And you get new, type-safe parsing methods
+const apiInput = { Ready: { finishedAt: "2025-10-25T10:00:00.000Z" } };
+
+// .parse() returns an enum that's been recursively parsed by zod then converted into an `IronEnum` type.
+const apiParsed = Status.parse(apiInput);
+// now use apiPased as a normal enum
+apiParsed.match(...)
+apiParsed.if(...)
+
+// You can also access the raw schema
+const UserSchema = z.object({
+  id: z.string(),
+  status: Status.schema,
+});
+```
+
+---
+
+Use framework-specific helpers for fully type-safe, reactive, and idiomatic pattern matching in your components.
+
+  - **React:** `npm install iron-enum-react`
+  - **Solid:** `npm install iron-enum-solid`
+  - **Vue:** `npm install iron-enum-vue`
+
+### React / Solid JS
+
+Both `iron-enum-react` and `iron-enum-solid` provide a `<Match>` component with a `cases` prop for full type-inference.
+
+```tsx
+import { Match } from 'iron-enum-react'; 
+// import { Match } from 'iron-enum-solid';  // or do this for Solid JS
+
+// Assume Status enum, Spinner, DataView, etc. are defined
+
+// `status` can be React state, a Solid signal, or just a variable
+const status = Status.Ready({ finishedAt: new Date() });
+
+return (
+  <Match 
+    on={status} // provide enum to component
+    cases={{ // hadle variants
+      Loading: () => <Spinner />,
+      Ready: (payload) => <DataView data={payload} />,
+      Error: ({ message }) => <ErrorDisplay error={message} />,
+      _: () => <Fallback />
+    }}
+  />
+);
+```
+
+### Vue
+
+`iron-enum-vue` provides a `<Match>` component that uses slots for an idiomatic, type-safe matching experience.
+
+```vue
+<script setup>
+import { Match } from 'iron-enum-vue';
+import { ref } from 'vue';
+// Assume Status enum, Spinner, DataView, etc. are defined
+
+const status = ref(Status.Ready({ finishedAt: new Date() }));
+</script>
+
+<template>
+  <Match :on="status">
+    <template #Loading>
+      <Spinner />
+    </template>
+    
+    <template #Ready="{ payload }">
+      <DataView :data="payload" />
+    </template>
+    
+    <template #Error="{ payload }">
+      <ErrorDisplay :error="payload.message" />
+    </template>
+    
+    <template #_>
+      <Fallback />
+    </template>
+  </Match>
+</template>
+```
+
 
 ## Advanced Usage
 
@@ -250,34 +393,40 @@ const processed = await state.matchAsync({
   Loading: async () => "Loading...",
   Success: async ({ data }) => {
     // Async processing
-    const enhanced = await enhanceData(data);
-    return enhanced;
+    // const enhanced = await enhanceData(data);
+    // return enhanced;
+    return data; // Example
   },
   Failure: async ({ error }) => {
-    await logError(error);
+    // await logError(error);
     return null;
   }
 });
 ```
 
-### Serialization
+### Serialization & Parsing
 
-Enums can be easily serialized to JSON:
+Enums have a built-in `toJSON()` method for easy serialization. Use `_.parse()` for deserialization from plain objects.
 
 ```ts
 const Status = IronEnum<{
-  Active: { since: Date };
+  // Use JSON-safe types for serialization
+  Active: { since: string };
   Inactive: { reason: string };
 }>();
 
-const status = Status.Active({ since: new Date() });
+const status = Status.Active({ since: new Date().toISOString() });
 
 // Convert to JSON
-console.log(status.toJSON()); 
-// { Active: { since: "2024-01-01T00:00:00.000Z" } }
+const json = status.toJSON(); 
+// { Active: { since: "2025-10-24T..." } }
+
+// ... send over network ...
 
 // Parse from JSON
-const parsed = Status._.parse({ Active: { since: new Date() } });
+const parsed = Status._.parse(json); // e.g., from JSON.parse()
+
+console.log(parsed.tag); // "Active"
 ```
 
 ### Type Guards and Narrowing
@@ -289,6 +438,7 @@ const Message = IronEnum<{
   Video: { url: string; duration: number };
 }>();
 
+// Use `typeof Message._.typeOf` for the union type
 function processMessage(msg: typeof Message._.typeOf) {
   // The tag property enables type narrowing
   switch (msg.tag) {
@@ -307,7 +457,9 @@ function processMessage(msg: typeof Message._.typeOf) {
 
 ### Performance Optimization
 
-For performance-critical applications, you can pre-define variant keys:
+For performance-critical applications, you can pre-define variant keys.  Normally each time you call `IronEnum()` a proxy is created the handle the different variants.  If you'd like to avoid the costly internal `new Proxy` you can pass an array of keys to the function that will be used instead of the proxy to initialize the variant functions.
+
+Passing in keys also adds key validation to the `myEnum._.parse(...)` method.
 
 ```ts
 // Pre-allocated version (no Proxy)
@@ -316,11 +468,12 @@ const Status = IronEnum<{
   Running: { pid: number };
   Stopped: { exitCode: number };
 }>({ 
-  keys: ["Idle", "Running", "Stopped"] // <- provide all keys in an array available at runtime.
+  keys: ["Idle", "Running", "Stopped"] // <- provide all keys in an array
 });
 
 // This avoids the Proxy overhead for better performance
 ```
+
 
 ## API Reference
 
@@ -328,45 +481,47 @@ const Status = IronEnum<{
 
 Every enum instance has these methods:
 
-- `tag`: The variant name (discriminant)
-- `payload`: The variant's associated data
-- `toJSON()`: Convert to plain object
-- `key()`: Get the variant key
-- `if(key, onMatch?, onMismatch?)`: Conditional execution
-- `ifNot(key, onMismatch?, onMatch?)`: Inverse conditional
-- `match(handlers)`: Exhaustive pattern matching
-- `matchAsync(handlers)`: Async pattern matching
+  - **`tag`**: The variant name (discriminant).
+  - **`payload`**: The variant's associated data.
+  - **`toJSON()`**: Convert to plain object (called by `JSON.stringify`).
+  - **`key()`**: Get the variant key as a string.
+  - **`if(key, onMatch?, onMismatch?)`**: Conditional execution.
+  - **`ifNot(key, onMismatch?, onMismatch?)`**: Inverse conditional.
+  - **`match(handlers)`**: Exhaustive pattern matching.
+  - **`matchAsync(handlers)`\_**: Async pattern matching.
 
 ### Result Methods
 
 In addition to enum methods:
 
-- `isOk()`: Check if Result is Ok
-- `isErr()`: Check if Result is Err
-- `unwrap()`: Get value or throw
-- `unwrap_or(default)`: Get value or default
-- `unwrap_or_else(fn)`: Get value or compute default
-- `ok()`: Convert to Option
+  - **`isOk()`**: Check if Result is Ok.
+  - **`isErr()`**: Check if Result is Err.
+  - **`unwrap()`**: Get value or throw error.
+  - **`unwrap_or(default)`**: Get value or return default.
+  - **`unwrap_or_else(fn)`**: Get value or compute default.
+  - **`ok()`**: Convert to `Option`, discarding error.
 
 ### Option Methods
 
 In addition to enum methods:
 
-- `isSome()`: Check if Option has value
-- `isNone()`: Check if Option is None
-- `unwrap()`: Get value or throw
-- `unwrap_or(default)`: Get value or default
-- `unwrap_or_else(fn)`: Get value or compute default
-- `ok_or(error)`: Convert to Result
-- `ok_or_else(fn)`: Convert to Result with computed error
+  - **`isSome()`**: Check if Option has a value.
+  - **`isNone()`**: Check if Option is None.
+  - **`unwrap()`**: Get value or throw error.
+  - **`unwrap_or(default)`**: Get value or return default.
+  - **`unwrap_or_else(fn)`**: Get value or compute default.
+  - **`ok_or(error)`**: Convert to `Result` with provided error.
+  - **`ok_or_else(fn)`**: Convert to `Result` with computed error.
+
 
 ## Best Practices
 
-1. **Use exhaustive matching** - Always handle all variants or use `_` fallback
-2. **Leverage type inference** - Let TypeScript infer types from your variants
-3. **Prefer Option/Result** - Use built-in types for common patterns
-4. **Keep payloads immutable** - Treat enum data as read-only
-5. **Use meaningful variant names** - Make your code self-documenting
+1.  **Use exhaustive matching** - Always handle all variants or use `_` fallback.
+2.  **Leverage type inference** - Let TypeScript infer types from your variants.
+3.  **Prefer Option/Result** - Use built-in types for common patterns.
+4.  **Keep payloads immutable** - Treat enum data as read-only.
+5.  **Use meaningful variant names** - Make your code self-documenting.
+
 
 ## Examples
 
@@ -432,11 +587,9 @@ result.match({
 });
 ```
 
+
 ## License
 
 MIT © 2025 Scott Lott
 
-## Keywords
-typescript, enum, tagged union, tagged unions, discriminated union, algebraic data type, adt, sum type, union types, rust enums, rust, pattern matching, option type, result type, functional programming
-
-Made with ❤️ by developers who miss Rust's enums in TypeScript
+*Made with ❤️ by a developer who misses Rust's enums in TypeScript*
