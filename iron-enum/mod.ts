@@ -1109,7 +1109,19 @@ export const None: () => OptionVariant<{ Some: never; None: undefined }> = () =>
 /**
  * Convert exception-throwing code into Result-returning code.
  */
-export const Try = {
+export const Try: {
+    /**
+     * Execute a synchronous function and wrap the outcome.
+     * Ok on success, Err with the caught exception on failure.
+     */
+    sync<X>(cb: () => X): ResultVariant<{ Ok: X; Err: unknown }>;
+    
+    /**
+     * Execute an asynchronous function and wrap the outcome.
+     * Resolves to Ok on success, Err with the caught exception on rejection.
+     */
+    async<X>(cb: () => Promise<X>): Promise<ResultVariant<{ Ok: X; Err: unknown }>>;
+} = {
 	/**
 	 * Execute a synchronous function and wrap the outcome.
 	 *
@@ -1161,7 +1173,21 @@ export const Try = {
 /**
  * Transform functions to return Result instead of throwing.
  */
-export const TryInto = {
+export const TryInto: {
+    /**
+     * Wrap a synchronous function. The wrapper never throws.
+     */
+    sync<X, Y extends any[]>(
+        cb: (...args: Y) => X
+    ): (...args: Y) => ResultVariant<{ Ok: X; Err: unknown }>;
+    
+    /**
+     * Wrap an asynchronous function. The wrapper resolves to Result.
+     */
+    async<X, Y extends any[]>(
+        cb: (...args: Y) => Promise<X>
+    ): (...args: Y) => Promise<ResultVariant<{ Ok: X; Err: unknown }>>;
+} = {
 	/**
 	 * Wrap a synchronous function. The wrapper never throws.
 	 *
