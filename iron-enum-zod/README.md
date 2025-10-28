@@ -1,6 +1,6 @@
 # 🦾 Iron Enum Zod
 
-A lightweight helper library to create `iron-enum` factories and `zod` schemas from a single definition.
+A lightweight helper library to create [`iron-enum`](https://www.npmjs.com/package/iron-enum) factories and `zod` schemas from a single definition.
 
 `iron-enum-zod` provides a `createZodEnum` function that acts as a single source of truth, generating both your type-safe `IronEnum` and a `zod` schema for runtime validation.
 

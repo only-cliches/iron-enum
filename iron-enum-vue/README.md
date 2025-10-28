@@ -1,4 +1,4 @@
-# iron-enum-vue
+# 🦾 Iron Enum Vue
 
 Typed Vue 3 render helpers for [`iron-enum`](https://www.npmjs.com/package/iron-enum).
 Per-variant slot inference in SFC and TSX. Optional exhaustive mode.
@@ -13,8 +13,8 @@ Peer requirements: TypeScript 5.1+, Vue 3.3+.
 
 Enable strict template checks for best inference:
 
+tsconfig.json:
 ```json
-// tsconfig.json
 { "vueCompilerOptions": { "strictTemplates": true } }
 ```
 
