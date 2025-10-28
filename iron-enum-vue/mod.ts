@@ -1,62 +1,83 @@
-import { defineComponent, h } from 'vue';
-import type { PropType, VNode, Slots } from 'vue';
-import type { VariantsRecord, EnumFactoryUnion } from 'iron-enum';
+import { defineComponent, type PropType, type SlotsType } from "vue";
+import type {
+  VariantsRecord,
+  IronEnumFactory,
+  IronEnumVariantUnion,
+} from "iron-enum";
 
-// Define the type for the slots that the consumer will provide
-type MatchSlots<ALL extends VariantsRecord> = {
-    [K in keyof ALL & string]?: (props: { payload: ALL[K] }) => VNode[];
-} & {
-    /**
-     * A fallback slot, `_`, for non-exhaustive matches.
-     */
-    _?: (props: {}) => VNode[];
+type TagOf<ALL extends VariantsRecord> = keyof ALL & string;
+
+type TagSlots<ALL extends VariantsRecord> = {
+  [K in TagOf<ALL>]?: (p: ALL[K]) => any;
 };
 
-export const Match = defineComponent({
-    name: 'Match',
+type FallbackSlot<ALL extends VariantsRecord> = {
+  _?: (p: IronEnumVariantUnion<ALL>) => any;
+};
 
-    /**
-     * Runtime props definition.
-     * We use a broad type here for the runtime, and the `setup`
-     * function will provide the specific generic types.
-     */
+export function createEnumMatch<ALL extends VariantsRecord>(
+  _factory: IronEnumFactory<ALL>
+) {
+  return defineComponent({
+    name: "EnumMatch",
     props: {
-        on: {
-            type: Object as PropType<EnumFactoryUnion<any>>,
-            required: true,
-        },
+      of: {
+        type: Object as PropType<IronEnumVariantUnion<ALL>>,
+        required: true as const,
+      },
     },
-
-    /**
-     * The `setup` function is where we introduce the generic.
-     * Vue will infer `ALL` from the `on` prop that's passed in.
-     */
-    setup<ALL extends VariantsRecord>(
-        props: any,
-        { slots }: { slots: Slots }
+    // purely for typing; ignored at runtime
+    slots: {} as SlotsType<TagSlots<ALL> & FallbackSlot<ALL>>,
+    setup(
+      props: Readonly<{ of: IronEnumVariantUnion<ALL> }>,
+      { slots }
     ) {
-        // The `setup` function returns the `render` function.
-        return () => {
-            // Cast the `on` prop (typed as `any` by the runtime prop)
-            // to our inferred generic type. This is type-safe.
-            const on = props.on as EnumFactoryUnion<ALL>;
-            const tag = on.tag as keyof ALL & string;
-            const payload = on.payload;
+      return () => {
+        const v = props.of;
+        const tag = v.tag as TagOf<ALL>;
 
-            // Cast the runtime `slots` object to our typed definition
-            const typedSlots = slots as MatchSlots<ALL>;
+        // Narrow slots for dynamic access
+        const tagHandlers = slots as unknown as Partial<
+          Record<TagOf<ALL>, (p: unknown) => any>
+        > &
+          FallbackSlot<ALL>;
 
-            // Find the matching slot, falling back to '_'
-            const slot = typedSlots[tag] ?? typedSlots._;
-
-            if (slot) {
-                // If a slot is found, render it by calling it
-                // as a function and passing the payload.
-                return slot({ payload: payload });
-            }
-
-            // Render an empty comment node
-            return h(() => null);
-        };
+        const s = tagHandlers[tag];
+        if (s) return s(v.data);
+        const fb = tagHandlers._;
+        return fb ? fb(v) : null;
+      };
     },
-});
+  });
+}
+
+export function createEnumMatchExhaustive<ALL extends VariantsRecord>(
+  factory: IronEnumFactory<ALL>
+) {
+  const Base = createEnumMatch(factory);
+  return defineComponent({
+    name: "EnumMatchExhaustive",
+    props: Base.props,
+    slots: Base.slots,
+    setup(
+      props: Readonly<{ of: IronEnumVariantUnion<ALL> }>,
+      { slots }
+    ) {
+      return () => {
+        const v = props.of;
+        const tag = v.tag as TagOf<ALL>;
+
+        const tagHandlers = slots as unknown as Partial<
+          Record<TagOf<ALL>, (p: unknown) => any>
+        >;
+
+        const s = tagHandlers[tag];
+        if (!s) throw new Error(`Missing slot for '${String(tag)}'`);
+        return s(v.data);
+      };
+    },
+  });
+}
+
+
+

@@ -283,7 +283,7 @@ parseResult.match({
 
 ## EcoSystem Helpers
 
-### Zod (`iron-enum-zod`)
+### Zod
 
 For runtime validation (e.g., parsing API responses), you can use the `iron-enum-zod` helper to create an `IronEnum` and a `zod` schema from a single definition.
 
@@ -328,38 +328,49 @@ const UserSchema = z.object({
 
 ---
 
-### Vue (`iron-enum-vue`)
+### Vue
 
-`iron-enum-vue` provides a `<Match>` component that uses slots for an idiomatic, type-safe matching experience.
+`iron-enum-vue` provides a `createEnumMatch` function that generates a component that uses slots for an idiomatic, type-safe matching experience.
 
 ```vue
-<script setup>
-import { Match } from 'iron-enum-vue';
-import { ref } from 'vue';
-// Assume Status enum, Spinner, DataView, etc. are defined
+<script setup lang="ts">
+import { IronEnum } from "iron-enum";
+import { createEnumMatch } from "iron-enum-vue";
+import { ref } from "vue";
 
-const status = ref(Status.Ready({ finishedAt: new Date() }));
+const Status = IronEnum<{
+  Loading: undefined;
+  Ready: { finishedAt: Date };
+  Error: { message: string; code: number };
+}>();
+
+const StatusMatch = createEnumMatch(Status);
+
+const statusValue = ref(Status.Loading());
+
 </script>
 
 <template>
-  <Match :on="status">
+  <StatusMatch :of="statusValue">
     <template #Loading>
-      <Spinner />
+      <div>Loading</div>
     </template>
-    
-    <template #Ready="{ data }">
-      <DataView :data="data" />
+
+    <template #Ready="{ finishedAt }">
+      <div>Done at {{ finishedAt.toLocaleTimeString() }}</div>
     </template>
-    
-    <template #Error="{ data }">
-      <ErrorDisplay :error="data.message" />
+
+    <template #Error="{ message, code }">
+      <div>Failed: {{ message }} ({{ code }})</div>
     </template>
-    
-    <template #_>
-      <Fallback />
+
+    <!-- Optional fallback for any unhandled tag -->
+    <template #_="{ tag }">
+      <div>Unknown: {{ tag }}</div>
     </template>
-  </Match>
+  </StatusMatch>
 </template>
+
 ```
 
 

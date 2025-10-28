@@ -1,6 +1,6 @@
 {
   "name": "iron-enum",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Rust like enums for Typescript",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",

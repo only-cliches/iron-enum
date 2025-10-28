@@ -2,9 +2,8 @@
   "name": "iron-enum-vue",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/iron-enum-vue.cjs.js",
-  "module": "./dist/iron-enum-vue.es.js",
-  "types": "./dist/Match.vue.d.ts",
+  "main": "dist/mod.js",
+  "types": "dist/mod.d.ts",
   "scripts": {
     "build": "tsc"
   },
@@ -13,10 +12,16 @@
   "license": "MIT",
   "type": "commonjs",
   "peerDependencies": {
-    "iron-enum": "^1.6.3",
+    "iron-enum": ">=1.7.0",
     "vue": ">=3.3.0"
   },
   "files": [
     "dist"
-  ]
+  ],
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.2"
+  },
+  "dependencies": {
+  }
 }

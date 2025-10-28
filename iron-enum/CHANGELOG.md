@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.7.1 Oct 28, 2025
+- README updates.
+
 ## 1.7.0 Oct 28, 2025
 - Minor bugfixes.
 - README improvements.
