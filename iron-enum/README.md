@@ -1,6 +1,6 @@
 # 🦾 Iron Enum
 
-Super‑lightweight **Rust‑style tagged unions for TypeScript** — fully type‑safe, zero‑dependency, < 1 kB min+gz.
+Super‑lightweight **Rust‑style tagged unions for TypeScript** — fully type‑safe, zero‑dependency, ~1 kB min+gz.
 
 [![GitHub Repo stars](https://img.shields.io/github/stars/only-cliches/iron-enum)](https://github.com/only-cliches/iron-enum)
 [![NPM Version](https://img.shields.io/npm/v/iron-enum)](https://www.npmjs.com/package/iron-enum)
