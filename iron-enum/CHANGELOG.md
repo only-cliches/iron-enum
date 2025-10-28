@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.7.2 Oct 28, 2025
+- Added better type checking for the `_.parse` and `.toJSON` methods.
+- README updates.
+
 ## 1.7.1 Oct 28, 2025
 - README updates.
 

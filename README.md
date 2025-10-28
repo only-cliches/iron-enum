@@ -311,7 +311,7 @@ const Status = createZodEnum(StatusPayloads);
 const ready = Status.self.Ready({ finishedAt: new Date() });
 
 // 4. And you get new, type-safe parsing methods
-const apiInput = { tag: "Ready", data: { finishedAt: "2025-10-25T10:00:00.000Z" } };
+const apiInput = { tag: "Ready", data: { finishedAt: "2025-10-25T10:00:00.000Z" } } as const;
 
 // .parse() returns an enum that's been recursively parsed by zod then converted into an `IronEnum` type.
 const apiParsed = Status.parse(apiInput);
@@ -344,14 +344,14 @@ const Status = IronEnum<{
   Error: { message: string; code: number };
 }>();
 
-const StatusMatch = createEnumMatch(Status);
+const EnumMatch = createEnumMatch(Status);
 
 const statusValue = ref(Status.Loading());
 
 </script>
 
 <template>
-  <StatusMatch :of="statusValue">
+  <EnumMatch :of="statusValue">
     <template #Loading>
       <div>Loading</div>
     </template>
@@ -368,7 +368,7 @@ const statusValue = ref(Status.Loading());
     <template #_="{ tag }">
       <div>Unknown: {{ tag }}</div>
     </template>
-  </StatusMatch>
+  </EnumMatch>
 </template>
 
 ```

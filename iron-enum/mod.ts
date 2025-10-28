@@ -148,7 +148,7 @@ export type IronEnumVariant<
 	 * const ready = loading.instance.Ready({ finishedAt: new Date() });
 	 */
 	readonly instance: IronEnumFactory<ALL>;
-} & EnumMethods<ALL>;
+} & EnumMethods<ALL, TAG>;
 
 /**
  * Serializable wire format for a variant instance.
@@ -186,7 +186,7 @@ type ExcludeVariant<
  * - `match` / `matchAsync` for flexible pattern matching.
  * - `matchExhaustive` for compile-time exhaustive handling.
  */
-export interface EnumMethods<ALL extends VariantsRecord> {
+export interface EnumMethods<ALL extends VariantsRecord, TAG extends keyof ALL & string> {
 	/**
 	 * Convert the instance into `{ tag, data }` for JSON or debugging.
 	 * Automatically called by `JSON.stringify`.
@@ -196,7 +196,7 @@ export interface EnumMethods<ALL extends VariantsRecord> {
 	 * const json = JSON.stringify(s);
 	 * // json === '{"tag":"Ready","data":{...}}'
 	 */
-	toJSON(): IronEnumWireFormat<ALL>;
+	toJSON(): { readonly tag: TAG; readonly data: ALL[TAG] };
 
 	/**
 	 * Predicate that narrows the variant type on success.
@@ -469,7 +469,7 @@ function enumFactory<
 		tag,
 		data,
 		instance,
-		toJSON: () => ({ tag, data }),
+		toJSON: () => ({ tag, data }) as any,
 		is: is as any,
 		if: _if as any,
 		ifNot: _ifNot as any,
@@ -536,8 +536,23 @@ export type EnumProperties<ALL extends VariantsRecord, AddedProps> = {
 	readonly typeData: ALL[keyof ALL];
 
 	/**
+	 * [TYPE ONLY] The generic json format exported by `toJSON` and parsed by `_.parse`.
+	 * 
+	 * @example
+	 * const Status = IronEnum<{ A: 0; B: 1 }>();
+	 *
+	 * function process(s: typeof Status._.typeJson) {
+	 * 		const p = Status._.parse(s);
+	 * }
+	 * 
+	 * process(Status.A(0).toJSON());
+	 * 
+	 */
+	readonly typeJson: IronEnumWireFormat<ALL>;
+
+	/**
 	 * [TYPE ONLY] Union of all variant instances for this enum.
-	 * This is the main type to use in function signatures.
+	 * This is the main type to use in function signatures or return statements.
 	 *
 	 * @example
 	 * const Status = IronEnum<{ A: 0; B: 1 }>();
@@ -545,6 +560,8 @@ export type EnumProperties<ALL extends VariantsRecord, AddedProps> = {
 	 * function process(s: typeof Status._.typeOf) {
 	 * // ...
 	 * }
+	 * 
+	 * process(Status.A(0));
 	 */
 	readonly typeOf: IronEnumVariantUnion<ALL> & AddedProps;
 
@@ -553,21 +570,21 @@ export type EnumProperties<ALL extends VariantsRecord, AddedProps> = {
 	 * If the keys where provided to the original function call then throws when the tag is not recognized by this factory.
 	 *
 	 * @example
-	 * const data = { tag: "Ready", data: { finishedAt: new Date() } };
+	 * const data = { tag: "Ready", data: { finishedAt: new Date() } } as const;
 	 * const s = Status._.parse(data);
 	 * if (s.is("Ready")) { ... }
 	 */
-	parse(
-		dataObj: { readonly tag: string; readonly data: unknown }
-	): IronEnumVariant<keyof ALL & string, ALL[keyof ALL], ALL>;
+	parse<TAG extends keyof ALL & string>(
+		dataObj: ALL[TAG] extends undefined ? { tag: TAG; data?: ALL[TAG] } : { tag: TAG; data: ALL[TAG] }
+	): IronEnumVariant<TAG, ALL[TAG], ALL>;
 
 	/**
 	 * Alias of `parse`. Convenient for deserializers.
 	 * @see parse
 	 */
-	fromJSON(
-		dataObj: { readonly tag: string; readonly data: unknown }
-	): IronEnumVariant<keyof ALL & string, ALL[keyof ALL], ALL>;
+	fromJSON<TAG extends keyof ALL & string>(
+		dataObj: ALL[TAG] extends undefined ? { tag: TAG; data?: ALL[TAG] } : { tag: TAG; data: ALL[TAG] }
+	): IronEnumVariant<TAG, ALL[TAG], ALL>;
 
 	/**
 	 * JSON.parse reviver. Pass as the reviver to automatically convert
@@ -607,8 +624,10 @@ export function IronEnum<ALL extends VariantsRecord>(args?: {
 	const keys = args?.keys;
 	let result: IronEnumFactory<ALL> = {} as any;
 
-	const parse = (dataObj: { readonly tag: string; readonly data: unknown }) => {
-		const actualKey = dataObj.tag as keyof ALL & string;
+	const parse = <TAG extends keyof ALL & string>(
+		dataObj: { readonly tag: TAG; readonly data: ALL[TAG] }
+	): IronEnumVariant<TAG, ALL[TAG], ALL> => {
+		const actualKey = dataObj.tag as TAG;
 		if (keys?.length && !keys.includes(actualKey)) {
 			throw new Error(`Unexpected variant '${actualKey}'`);
 		}
@@ -617,20 +636,21 @@ export function IronEnum<ALL extends VariantsRecord>(args?: {
 			actualKey,
 			dataObj.data as ALL[typeof actualKey],
 			result
-		);
+		)
 	};
 
 	const _: EnumProperties<ALL, {}> = {
 		typeTags: undefined as never, // [TYPE ONLY]
 		typeData: undefined as never, // [TYPE ONLY]
 		typeOf: undefined as never,   // [TYPE ONLY]
+		typeJson: undefined as never,   // [TYPE ONLY]
 		parse,
 		fromJSON: parse,
-		reviver(obj: unknown) {
+		reviver(obj: any) {
 			if (obj && typeof obj === "object" && "tag" in (obj as any) && "data" in (obj as any)) {
 				// We use parse, but must cast the input.
 				// The `in` checks are a reasonable safeguard.
-				return parse(obj as { tag: string; data: unknown });
+				return parse(obj);
 			}
 			return obj;
 		},

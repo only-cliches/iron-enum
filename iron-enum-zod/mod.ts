@@ -1,15 +1,16 @@
-import { z, ZodError, ZodTypeAny } from 'zod';
+import { z, ZodError, ZodType } from 'zod';
 import { IronEnum, Result } from 'iron-enum';
 import type {
     IronEnumFactory,
     IronEnumVariantUnion,
     ResultVariant,
     VariantsRecord,
-    IronEnumWireFormat
+    IronEnumWireFormat,
+    IronEnumVariant
 } from 'iron-enum';
 
 export type ZodEnum<
-    T extends { [K in string]: ZodTypeAny },
+    T extends { [K in string]: ZodType },
     Variants extends VariantsRecord = { [K in keyof T]: z.infer<T[K]> }
 > = {
     /** The core IronEnum factory instance */
@@ -18,24 +19,23 @@ export type ZodEnum<
      * Parses a raw object, validates it, and returns an IronEnum instance.
      * Throws an error if validation fails.
      */
-    parse: (input: unknown, params?: z.core.ParseContext<z.core.$ZodIssue>) => IronEnumVariantUnion<Variants>,
+    parse: <TAG extends keyof Variants & string>(input: Variants[TAG] extends undefined ? { tag: TAG, data?: Variants[TAG] } : { tag: TAG, data: Variants[TAG] }, params?: z.core.ParseContext<z.core.$ZodIssue>) => IronEnumVariant<TAG, Variants[TAG], Variants>,
     /**
      * A non-throwing version of `.parse` that returns a Result type instead. You can call `.unwrap()` to get the value and optionally throw an error.
      * * @param input object to parse
      * @param params Zod parse parameters
      * @returns Result<Enum, ZodError>
      */
-    safeParse: (input: unknown, params?: z.core.ParseContext<z.core.$ZodIssue>) => ResultVariant<{ Ok: IronEnumVariantUnion<Variants>, Err: z.ZodError }>,
+    safeParse: <TAG extends keyof Variants & string>(input: Variants[TAG] extends undefined ? { tag: TAG, data?: Variants[TAG] } : { tag: TAG, data: Variants[TAG] }, params?: z.core.ParseContext<z.core.$ZodIssue>) => ResultVariant<{ Ok: IronEnumVariant<TAG, Variants[TAG], Variants>, Err: z.ZodError }>,
     /** The raw Zod schema for the enum's wire format */
     schema: z.ZodType<IronEnumWireFormat<Variants>>
 }
 
 export function createZodEnum<
-    T extends { [K in string]: ZodTypeAny }
+    T extends { [K in string]: ZodType }
 >(payloads: T): "_" extends keyof T ? "ERROR: '_' is reserved!" : ZodEnum<T> {
 
     type Variants = { [K in keyof T]: z.infer<T[K]> };
-    type EnumType = IronEnumVariantUnion<Variants>;
     type WireFormat = IronEnumWireFormat<Variants>;
 
     const Enum = IronEnum<Variants>({
@@ -59,11 +59,11 @@ export function createZodEnum<
         Schema = variantSchemas[0] as any;
     } else {
         Schema = z.union(
-            variantSchemas as unknown as [ZodTypeAny, ZodTypeAny, ...ZodTypeAny[]]
+            variantSchemas as unknown as [ZodType, ZodType, ...ZodType[]]
         ) as any;
     }
 
-    const R = Result<EnumType, ZodError>();
+    const R = Result<typeof Enum._.typeOf, ZodError>();
 
     return {
         self: Enum,

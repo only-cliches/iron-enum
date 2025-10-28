@@ -2,7 +2,6 @@ import { describe, it, expect, jest } from '@jest/globals';
 
 import { z, ZodError } from 'zod';
 import { createZodEnum } from '../mod'; // Adjust this path
-import { IronEnum, Result } from 'iron-enum';
 
 // 1. Define the test schema
 const StatusPayloads = {
@@ -35,16 +34,14 @@ describe('createZodEnum', () => {
   describe('.parse()', () => {
     it('should correctly parse a valid payload (Ready)', () => {
       const date = new Date();
-      const input = { tag: "Ready", data: { finishedAt: date } };
-      const parsed = Status.parse(input);
+      const parsed = Status.parse({ tag: "Ready", data: { finishedAt: date } });
 
       expect(parsed.tag).toBe('Ready');
       expect((parsed.data as any).finishedAt).toBe(date);
     });
 
     it('should correctly parse a valid payload (Loading)', () => {
-      const input = { tag: "Loading" };
-      const parsed = Status.parse(input);
+      const parsed = Status.parse({ tag: "Loading", data: undefined });
 
       expect(parsed.tag).toBe('Loading');
       expect(parsed.data).toBeUndefined();
@@ -58,7 +55,7 @@ describe('createZodEnum', () => {
       const CoercingStatus = createZodEnum(CoercingPayloads);
       
       const dateStr = '2025-01-01T00:00:00.000Z';
-      const input = { tag: "Ready", data: { finishedAt: dateStr } };
+      const input = { tag: "Ready", data: { finishedAt: dateStr } } as any;
       const parsed = CoercingStatus.parse(input);
 
       expect(parsed.tag).toBe('Ready');
@@ -67,17 +64,17 @@ describe('createZodEnum', () => {
 
     it('should throw a ZodError for an invalid payload', () => {
       // 'finishedAt' is missing
-      const input = { tag: "Ready", data: { notFinishedAt: new Date() } };
+      const input = { tag: "Ready", data: { notFinishedAt: new Date() } } as any;
       expect(() => Status.parse(input)).toThrow(ZodError);
     });
 
     it('should throw a ZodError for an unknown variant tag', () => {
-      const input = { tag: "X", data: { data: 'test' } };
+      const input = { tag: "X", data: { data: 'test' } } as any;
       expect(() => Status.parse(input)).toThrow(ZodError);
     });
 
     it('should throw a ZodError for an empty object', () => {
-      const input = {};
+      const input = {} as any;
       expect(() => Status.parse(input)).toThrow(ZodError);
     });
   });
@@ -85,7 +82,7 @@ describe('createZodEnum', () => {
   describe('.safeParse()', () => {
     it('should return an Ok result for a valid payload', () => {
       const date = new Date();
-      const input = { tag: "Ready", data: { finishedAt: date } };
+      const input = { tag: "Ready", data: { finishedAt: date } } as const;
       const result = Status.safeParse(input);
 
       expect(result.isOk()).toBe(true);
@@ -95,7 +92,7 @@ describe('createZodEnum', () => {
     });
 
     it('should return an Err result for an invalid payload', () => {
-      const input = { tag: "Error", data: { message: 12345 } }; // message should be string
+      const input = { tag: "Error", data: { message: 12345 } } as any; // message should be string
       const result = Status.safeParse(input);
 
       expect(result.isOk()).toBe(false);
@@ -146,8 +143,8 @@ describe('createZodEnum', () => {
         Only: z.string(),
       });
 
-      const valid = { tag: "Only", data: 'hello' };
-      const invalid = { tag: "Also", data: 'world' };
+      const valid = { tag: "Only", data: 'hello' } as const;
+      const invalid = { tag: "Also", data: 'world' } as any;
 
       expect(Single.parse(valid).data).toBe('hello');
       expect(() => Single.parse(invalid)).toThrow(ZodError);
@@ -156,8 +153,8 @@ describe('createZodEnum', () => {
     it('should handle an empty enum', () => {
       const Empty = createZodEnum({});
       
-      expect(() => Empty.parse({ a: 1 })).toThrow(ZodError);
-      expect(Empty.safeParse({ a: 1 }).isErr()).toBe(true);
+      expect(() => Empty.parse({ a: 1 } as any)).toThrow(ZodError);
+      expect(Empty.safeParse({ a: 1 } as any).isErr()).toBe(true);
     });
   });
 });
