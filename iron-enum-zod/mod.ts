@@ -1,12 +1,12 @@
 import { z, ZodError, ZodTypeAny } from 'zod';
-import { IronEnum, Result } from '../iron-enum';
+import { IronEnum, Result } from 'iron-enum';
 import type {
     IronEnumFactory,
     IronEnumVariantUnion,
     ResultVariant,
     VariantsRecord,
     IronEnumWireFormat
-} from '../iron-enum';
+} from 'iron-enum';
 
 export type ZodEnum<
     T extends { [K in string]: ZodTypeAny },

@@ -50,7 +50,7 @@ const Status = createZodEnum(StatusPayloads);
 const loading = Status.self.Loading();
 
 // 4. ...AND a powerful parser.
-const result = Status.parse({ Ready: { finishedAt: "2025-10-25" } });
+const result = Status.parse({ tag: "Ready", data: { finishedAt: "2025-10-25" } });
 
 // you can also directly access the zod schema
 const zodSchema = Status.schema;
@@ -98,7 +98,7 @@ const message = ready.match({
 // --- Using the Parsers ---
 
 // An example API response
-const apiInput = { Error: { message: "Network failed" } };
+const apiInput = { tag: "Error", data: { message: "Network failed", code: 222 } };
 
 // Use .safeParse() to get a Result<Status, ZodError>
 const result = Status.safeParse(apiInput);
@@ -136,7 +136,7 @@ const error = Status.self.Error({ message: "..." });
 ### schema
 The raw `z.ZodType` schema. This is useful for embedding your enum schema inside other Zod schemas.
 
-It validates the `toJSON()`/`_.parse()` format (e.g., `{ Ready: { ... } }`).
+It validates the `toJSON()`/`_.parse()` format (e.g., `{ tag: ..., data: ... }`).
 ```ts
 const UserSchema = z.object({
   id: z.string(),
@@ -145,7 +145,7 @@ const UserSchema = z.object({
 
 const user = UserSchema.parse({
   id: "user-123",
-  status: { Ready: { finishedAt: new Date() } }
+  status: { tag: "Ready", data: { finishedAt: new Date() } }
 });
 ```
 
@@ -153,10 +153,10 @@ const user = UserSchema.parse({
 Parses and validates an unknown `input`. If validation succeeds, it returns a fully-formed `IronEnum` instance. If validation fails, it throws a `ZodError`.
 ```ts
 // This works
-const status = Status.parse({ Ready: { finishedAt: new Date() } });
+const status = Status.parse({ tag: "Ready", data: { finishedAt: new Date() } });
 
 // This throws
-const status = Status.parse({ Ready: { finishedAt: "not a date" } });
+const status = Status.parse({ tag: "Ready", data: { finishedAt: "Not a date" } });
 ```
 
 ### safeParse(input, params?)
@@ -167,10 +167,10 @@ Parses and validates an unknown `input`. It does not throw. Instead, it returns 
 
 This is the recommended way to handle untrusted data.
 ```ts
-const result = Status.safeParse({ Error: { message: 123 } }); // 'message' is wrong type
+const result = Status.safeParse({ tag: "Error", data: { message: 123 } }); // 'message' is wrong type
 
 if (result.isErr()) {
-  console.error(result.payload.issues); // Safely access the ZodError
+  console.error(result.data.issues); // Safely access the ZodError
 }
 
 ```
