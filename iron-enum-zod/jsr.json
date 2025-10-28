@@ -1,0 +1,5 @@
+{
+    "name": "@onlycliches/iron-enum-zod",
+    "version": "1.0.0",
+    "exports": "./mod.ts"
+}

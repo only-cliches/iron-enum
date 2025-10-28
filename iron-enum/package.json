@@ -1,12 +1,12 @@
 {
   "name": "iron-enum",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "description": "Rust like enums for Typescript",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
   "scripts": {
     "test": "jest --coverage",
-    "minify": "npx terser dist/mod.js --compress --mangle --output dist/mod.min.js",
+    "minify": "npx terser dist/mod.js --toplevel --compress --mangle --output dist/mod.min.js",
     "build": "tsc",
     "size": "gzip -c dist/mod.min.js | wc -c"
   },

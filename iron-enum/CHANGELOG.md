@@ -1,10 +1,12 @@
 # Change Log
 
-## 1.7.0
+## 1.7.0 Oct 28, 2025
 - Minor bugfixes.
 - README improvements.
-- Added React, Vue and SolidJS helpers.
-- Added Zod helper
+- Added VueJS and Zod helpers.
+- BREAKING: Wire format updated from `{[tag]: data}` to `{"tag": tag, "data": data}`.  `toJSON` and `_.parse` updated accordingly.
+- BREAKING: Removed duplicate `key()` and `property` properties.  The use case of these is already available via `tag` and `data` properties.
+- BREAKING: Some internal types have been renamed.
 
 ## 1.6.3 July 11, 2025
 - README and code documentation improvements.

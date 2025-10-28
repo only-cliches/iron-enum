@@ -29,25 +29,25 @@ describe('createZodEnum', () => {
 
     expect(loading.tag).toBe('Loading');
     expect(ready.tag).toBe('Ready');
-    expect(ready.payload).toHaveProperty('finishedAt');
+    expect(ready.data).toHaveProperty('finishedAt');
   });
 
   describe('.parse()', () => {
     it('should correctly parse a valid payload (Ready)', () => {
       const date = new Date();
-      const input = { Ready: { finishedAt: date } };
+      const input = { tag: "Ready", data: { finishedAt: date } };
       const parsed = Status.parse(input);
 
       expect(parsed.tag).toBe('Ready');
-      expect((parsed.payload as any).finishedAt).toBe(date);
+      expect((parsed.data as any).finishedAt).toBe(date);
     });
 
     it('should correctly parse a valid payload (Loading)', () => {
-      const input = { Loading: undefined };
+      const input = { tag: "Loading" };
       const parsed = Status.parse(input);
 
       expect(parsed.tag).toBe('Loading');
-      expect(parsed.payload).toBeUndefined();
+      expect(parsed.data).toBeUndefined();
     });
 
     it('should coerce types defined in Zod (e.g., string to date)', () => {
@@ -58,29 +58,21 @@ describe('createZodEnum', () => {
       const CoercingStatus = createZodEnum(CoercingPayloads);
       
       const dateStr = '2025-01-01T00:00:00.000Z';
-      const input = { Ready: { finishedAt: dateStr } };
+      const input = { tag: "Ready", data: { finishedAt: dateStr } };
       const parsed = CoercingStatus.parse(input);
 
       expect(parsed.tag).toBe('Ready');
-      expect(parsed.payload.finishedAt).toEqual(new Date(dateStr));
+      expect(parsed.data.finishedAt).toEqual(new Date(dateStr));
     });
 
     it('should throw a ZodError for an invalid payload', () => {
       // 'finishedAt' is missing
-      const input = { Ready: { notFinishedAt: new Date() } };
+      const input = { tag: "Ready", data: { notFinishedAt: new Date() } };
       expect(() => Status.parse(input)).toThrow(ZodError);
     });
 
     it('should throw a ZodError for an unknown variant tag', () => {
-      const input = { Unknown: { data: 'test' } };
-      expect(() => Status.parse(input)).toThrow(ZodError);
-    });
-
-    it('should throw a ZodError for multiple keys (violating refine)', () => {
-      const input = {
-        Loading: undefined,
-        Error: { message: 'too many keys' },
-      };
+      const input = { tag: "X", data: { data: 'test' } };
       expect(() => Status.parse(input)).toThrow(ZodError);
     });
 
@@ -93,17 +85,17 @@ describe('createZodEnum', () => {
   describe('.safeParse()', () => {
     it('should return an Ok result for a valid payload', () => {
       const date = new Date();
-      const input = { Ready: { finishedAt: date } };
+      const input = { tag: "Ready", data: { finishedAt: date } };
       const result = Status.safeParse(input);
 
       expect(result.isOk()).toBe(true);
       expect(result.isErr()).toBe(false);
       expect(result.unwrap().tag).toBe('Ready');
-      expect((result.unwrap().payload as any).finishedAt).toBe(date);
+      expect((result.unwrap().data as any).finishedAt).toBe(date);
     });
 
     it('should return an Err result for an invalid payload', () => {
-      const input = { Error: { message: 12345 } }; // message should be string
+      const input = { tag: "Error", data: { message: 12345 } }; // message should be string
       const result = Status.safeParse(input);
 
       expect(result.isOk()).toBe(false);
@@ -120,17 +112,7 @@ describe('createZodEnum', () => {
       expect(error?.issues[0].code).toBe('invalid_union');
     });
 
-    it('should return an Err result for multiple keys', () => {
-      const input = { Loading: undefined, Ready: { finishedAt: new Date() } };
-      const result = Status.safeParse(input);
 
-      expect(result.isOk()).toBe(false);
-      expect(result.isErr()).toBe(true);
-
-      const error = (result.tag == "Err" ? result.payload : undefined) as any;
-      expect(error).toBeInstanceOf(ZodError);
-      expect(error.issues[0].code).toBe('invalid_union');
-    });
   });
 
   describe('.schema', () => {
@@ -143,7 +125,7 @@ describe('createZodEnum', () => {
       const date = new Date();
       const validUser = {
         id: 'user-123',
-        status: { Ready: { finishedAt: date } },
+        status: { tag: "Ready", data: { finishedAt: date } },
       };
 
       const invalidUser = {
@@ -152,7 +134,7 @@ describe('createZodEnum', () => {
       };
       
       const parsedUser = UserSchema.parse(validUser);
-      expect(parsedUser.status).toEqual({ Ready: { finishedAt: date } });
+      expect(parsedUser.status).toEqual({ tag: "Ready", data: { finishedAt: date } });
 
       expect(() => UserSchema.parse(invalidUser)).toThrow(ZodError);
     });
@@ -164,10 +146,10 @@ describe('createZodEnum', () => {
         Only: z.string(),
       });
 
-      const valid = { Only: 'hello' };
-      const invalid = { Also: 'world' };
+      const valid = { tag: "Only", data: 'hello' };
+      const invalid = { tag: "Also", data: 'world' };
 
-      expect(Single.parse(valid).payload).toBe('hello');
+      expect(Single.parse(valid).data).toBe('hello');
       expect(() => Single.parse(invalid)).toThrow(ZodError);
     });
 

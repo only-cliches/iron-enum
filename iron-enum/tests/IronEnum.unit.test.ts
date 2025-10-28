@@ -9,16 +9,15 @@ describe("IronEnum builder & instance basics", () => {
   it("constructs a no-payload variant", () => {
     const val = Status.Loading();
     expect(val.tag).toBe("Loading");
-    expect(val.payload).toEqual(undefined);
-    expect(val.key()).toBe("Loading");
-    expect(val.toJSON()).toEqual({ Loading: undefined });
+    expect(val.data).toEqual(undefined);
+    expect(val.toJSON()).toEqual({tag: "Loading", data: undefined});
   });
 
   it("constructs a payload variant", () => {
     const at = new Date();
     const val = Status.Ready({ finishedAt: at });
-    expect(val.payload.finishedAt).toBe(at);
-    expect(val.toJSON()).toEqual({ Ready: { finishedAt: at } });
+    expect(val.data.finishedAt).toBe(at);
+    expect(val.toJSON()).toEqual({tag: "Ready", data: { finishedAt: at }});
   });
 
   it("supports match() with exhaustive handlers", () => {
@@ -56,16 +55,9 @@ describe("IronEnum builder & instance basics", () => {
   });
 
   it("parse() reconstructs a variant object", () => {
-    const obj = { Ready: { finishedAt: new Date(0) } };
+    const obj = {tag: "Ready" as const, data: { finishedAt: new Date(0) } };
     const val = Status._.parse(obj);
     expect(val.tag).toBe("Ready");
-    expect(val.payload).toEqual(obj.Ready);
-  });
-
-  it("parse() rejects objects with 0 or >1 keys", () => {
-    expect(() => Status._.parse({} as any)).toThrow(/Expected exactly 1/);
-    expect(() =>
-      Status._.parse({ Loading: undefined, Ready: {} as any })
-    ).toThrow(/Expected exactly 1/);
+    expect(val.data).toEqual(obj.data);
   });
 });

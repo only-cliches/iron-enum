@@ -25,7 +25,6 @@ IronEnum lets you model expressive enums (a.k.a. tagged unions) in plain TypeScr
   - [Try and TryInto](#try-and-tryinto)
 - [EcoSystem Helpers](#ecosystem-helpers)
   - [Zod](#zod)
-  - [React / SolidJS](#react--solidjs)
   - [Vue](#vue)
 - [Advanced Usage](#advanced-usage)
   - [Async Pattern Matching](#async-pattern-matching)
@@ -55,11 +54,11 @@ npm install iron-enum
 yarn add iron-enum
 # or
 pnpm add iron-enum
-````
+```
 
 ## Quick Start
 
-```ts
+```tsx
 import { IronEnum } from 'iron-enum';
 
 // Define your enum variants
@@ -80,6 +79,23 @@ const message = ready.match({
   Ready: ({ finishedAt }) => `Done at ${finishedAt.toLocaleTimeString()}`,
   Error: ({ message }) => `Failed: ${message}`
 });
+
+// Use in UI components...
+// Works with React and SolidJS out of the box!
+const component = (props) => {
+
+    const [value, setValue] = useState(Status.Loading());
+
+    return (
+        <div>
+            {value.match({
+                Loading: () => <div>Loading</div>,
+                Ready: ({ finishedAt }) => <div>{`Done at ${finishedAt.toLocaleTimeString()}`}</div>,
+                Error: ({ message }) => <div>{`Failed: ${message}`}</div>
+            })}
+        </div>
+    )
+}
 ```
 
 
@@ -179,11 +195,14 @@ Rust-style error handling:
 ```ts
 import { Result, Ok, Err } from 'iron-enum';
 
-function divide(a: number, b: number): Result<number, string> {
+const DivideResult = Result<number, string>();
+
+// 2. Use the factory's type for the return annotation
+function divide(a: number, b: number): typeof DivideResult._.typeOf {
   if (b === 0) {
-    return Err("Division by zero");
+    return DivideResult.Err("Division by zero");
   }
-  return Ok(a / b);
+  return DivideResult.Ok(a / b);
 }
 
 const result = divide(10, 2);
@@ -193,6 +212,8 @@ const message = result.match({
   Ok: (value) => `Result: ${value}`,
   Err: (error) => `Error: ${error}`
 });
+
+console.log(message); // "Result: 5"
 
 // Convenience methods
 console.log(result.isOk());        // true
@@ -205,15 +226,15 @@ console.log(result.unwrap_or(0));  // 5
 Nullable value handling:
 
 ```ts
-import { Option, Some, None } from 'iron-enum';
+import { Option } from 'iron-enum';
 
 // Assumes 'User' type is defined elsewhere
-// function findUser(id: string): Option<User> {
-//   const user = database.find(u => u.id === id);
-//   return user ? Some(user) : None();
-// }
 
-const userOption = Some({ id: "123", name: "Alice" }); // Example
+type User = {id: number, name: string};
+
+const optUser = Option<User>();
+
+const userOption = optUser.Some({ id: 123, name: "Alice" }); // Example
 
 // Convert to Result
 const userResult = userOption.ok_or("User not found");
@@ -290,7 +311,7 @@ const Status = createZodEnum(StatusPayloads);
 const ready = Status.self.Ready({ finishedAt: new Date() });
 
 // 4. And you get new, type-safe parsing methods
-const apiInput = { Ready: { finishedAt: "2025-10-25T10:00:00.000Z" } };
+const apiInput = { tag: "Ready", data: { finishedAt: "2025-10-25T10:00:00.000Z" } };
 
 // .parse() returns an enum that's been recursively parsed by zod then converted into an `IronEnum` type.
 const apiParsed = Status.parse(apiInput);
@@ -307,39 +328,7 @@ const UserSchema = z.object({
 
 ---
 
-Use framework-specific helpers for fully type-safe, reactive, and idiomatic pattern matching in your components.
-
-  - **React:** `npm install iron-enum-react`
-  - **Solid:** `npm install iron-enum-solid`
-  - **Vue:** `npm install iron-enum-vue`
-
-### React / Solid JS
-
-Both `iron-enum-react` and `iron-enum-solid` provide a `<Match>` component with a `cases` prop for full type-inference.
-
-```tsx
-import { Match } from 'iron-enum-react'; 
-// import { Match } from 'iron-enum-solid';  // or do this for Solid JS
-
-// Assume Status enum, Spinner, DataView, etc. are defined
-
-// `status` can be React state, a Solid signal, or just a variable
-const status = Status.Ready({ finishedAt: new Date() });
-
-return (
-  <Match 
-    on={status} // provide enum to component
-    cases={{ // hadle variants
-      Loading: () => <Spinner />,
-      Ready: (payload) => <DataView data={payload} />,
-      Error: ({ message }) => <ErrorDisplay error={message} />,
-      _: () => <Fallback />
-    }}
-  />
-);
-```
-
-### Vue
+### Vue (`iron-enum-vue`)
 
 `iron-enum-vue` provides a `<Match>` component that uses slots for an idiomatic, type-safe matching experience.
 
@@ -358,12 +347,12 @@ const status = ref(Status.Ready({ finishedAt: new Date() }));
       <Spinner />
     </template>
     
-    <template #Ready="{ payload }">
-      <DataView :data="payload" />
+    <template #Ready="{ data }">
+      <DataView :data="data" />
     </template>
     
-    <template #Error="{ payload }">
-      <ErrorDisplay :error="payload.message" />
+    <template #Error="{ data }">
+      <ErrorDisplay :error="data.message" />
     </template>
     
     <template #_>
@@ -410,7 +399,6 @@ Enums have a built-in `toJSON()` method for easy serialization. Use `_.parse()` 
 
 ```ts
 const Status = IronEnum<{
-  // Use JSON-safe types for serialization
   Active: { since: string };
   Inactive: { reason: string };
 }>();
@@ -419,12 +407,12 @@ const status = Status.Active({ since: new Date().toISOString() });
 
 // Convert to JSON
 const json = status.toJSON(); 
-// { Active: { since: "2025-10-24T..." } }
+// { tag: "Active", data: { since: "2025-10-24T..." } }
 
 // ... send over network ...
 
 // Parse from JSON
-const parsed = Status._.parse(json); // e.g., from JSON.parse()
+const parsed = Status._.parse(json); 
 
 console.log(parsed.tag); // "Active"
 ```
@@ -443,13 +431,13 @@ function processMessage(msg: typeof Message._.typeOf) {
   // The tag property enables type narrowing
   switch (msg.tag) {
     case "Text":
-      console.log(msg.payload.content); // TypeScript knows this is string
+      console.log(msg.data.content); // TypeScript knows this is string
       break;
     case "Image":
-      console.log(msg.payload.url);     // TypeScript knows this is a string
+      console.log(msg.data.url);     // TypeScript knows this is a string
       break;
     case "Video":
-      console.log(msg.payload.duration); // TypeScript knows this is number
+      console.log(msg.data.duration); // TypeScript knows this is number
       break;
   }
 }
@@ -457,7 +445,7 @@ function processMessage(msg: typeof Message._.typeOf) {
 
 ### Performance Optimization
 
-For performance-critical applications, you can pre-define variant keys.  Normally each time you call `IronEnum()` a proxy is created the handle the different variants.  If you'd like to avoid the costly internal `new Proxy` you can pass an array of keys to the function that will be used instead of the proxy to initialize the variant functions.
+Normally each time you call `IronEnum()` a proxy is created, however this can be bypassed for performance-critical applications by providing the variant keys as parameters.
 
 Passing in keys also adds key validation to the `myEnum._.parse(...)` method.
 
@@ -482,13 +470,14 @@ const Status = IronEnum<{
 Every enum instance has these methods:
 
   - **`tag`**: The variant name (discriminant).
-  - **`payload`**: The variant's associated data.
-  - **`toJSON()`**: Convert to plain object (called by `JSON.stringify`).
-  - **`key()`**: Get the variant key as a string.
+  - **`data`**: The variant's associated data.
+  - **`toJSON()`**: Convert to plain object.
+  - **`is(key)`**: Conditional check for if(..) statements.
   - **`if(key, onMatch?, onMismatch?)`**: Conditional execution.
   - **`ifNot(key, onMismatch?, onMismatch?)`**: Inverse conditional.
-  - **`match(handlers)`**: Exhaustive pattern matching.
-  - **`matchAsync(handlers)`\_**: Async pattern matching.
+  - **`match(handlers)`**: Optional exhaustive pattern matching, fallback allowed
+  - **`matchAsync(handlers)`**: Async pattern matching.
+  - **`matchExhaustive(handlers)`** Exhaustive pattern matching, no fallback method allowed.
 
 ### Result Methods
 
