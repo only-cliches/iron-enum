@@ -5,7 +5,8 @@
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepack": "npm run build"
   },
   "keywords": [],
   "author": "Scott Lott <me@scottlott.com>",
@@ -15,14 +16,18 @@
   },
   "type": "commonjs",
   "peerDependencies": {
-    "iron-enum": ">=1.7.0",
+    "iron-enum": "^1.7.0 || ^1.8.0",
     "vue": ">=3.3.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "devDependencies": {
+    "iron-enum": "^1.7.0 || ^1.8.0",
     "typescript": "^5.9.3",
+    "vue": ">=3.3.0",
     "vue-tsc": "^3.1.2"
   },
   "dependencies": {

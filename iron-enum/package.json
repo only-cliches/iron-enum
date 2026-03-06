@@ -1,13 +1,26 @@
 {
   "name": "iron-enum",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "description": "Rust like enums for Typescript",
-  "main": "dist/mod.js",
+  "type": "module",
+  "main": "dist/mod.cjs",
+  "module": "dist/mod.js",
   "types": "dist/mod.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/mod.d.ts",
+      "import": "./dist/mod.js",
+      "require": "./dist/mod.cjs"
+    }
+  },
   "scripts": {
     "test": "jest --coverage",
     "minify": "npx terser dist/mod.js --toplevel --compress --mangle --output dist/mod.min.js",
-    "build": "tsc",
+    "clean": "rm -rf dist dist-cjs",
+    "build:esm": "tsc --module ES2020 --outDir dist",
+    "build:cjs": "tsc --module commonjs --outDir dist-cjs --declaration false --declarationMap false --sourceMap false && mv dist-cjs/mod.js dist/mod.cjs && rm -rf dist-cjs",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "prepack": "npm run build",
     "size": "gzip -c dist/mod.min.js | wc -c"
   },
   "author": "Scott Lott <me@scottlott.com>",
@@ -38,5 +51,11 @@
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.0"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
 }

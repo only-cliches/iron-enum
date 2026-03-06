@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.8.0 Mar 6, 2026
+- Added dual package outputs for npm consumers:
+  - `module` now points to `dist/mod.js` (ESM)
+  - `main` now points to `dist/mod.cjs` (CommonJS)
+- Added `exports` map for explicit ESM/CJS/type resolution.
+- Updated build scripts to emit both ESM and CJS artifacts via TypeScript.
+- Updated constructor types so variants whose payload object has only optional fields can be called with no arguments.
+- Added `"type": "module"` and retained CommonJS via `dist/mod.cjs` to improve Node ESM loading behavior.
+- Limited published files to release artifacts (`dist`, README, LICENSE, CHANGELOG) and added `prepack` build step.
+
 ## 1.7.2 Oct 28, 2025
 - Added better type checking for the `_.parse` and `.toJSON` methods.
 - README updates.

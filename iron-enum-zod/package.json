@@ -6,7 +6,8 @@
   "types": "dist/mod.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "prepack": "npm run build"
   },
   "keywords": [],
   "author": "Scott Lott <me@scottlott.com>",
@@ -16,13 +17,21 @@
   },
   "type": "commonjs",
   "peerDependencies": {
-    "iron-enum": "^1.7.0",
+    "iron-enum": "^1.7.0 || ^1.8.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
+    "iron-enum": "^1.7.0 || ^1.8.0",
     "jest": "^29.7.0",
+    "typescript": "^5.5.0",
     "ts-jest": "^29.4.5",
-    "ts-node": "^10.9.2"
-  }
+    "ts-node": "^10.9.2",
+    "zod": "^4.1.12"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

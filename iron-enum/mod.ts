@@ -97,11 +97,24 @@ export type IronEnumVariantUnion<ALL extends VariantsRecord> = {
  * Constructor signature for a variant based on its payload type.
  *
  * - If the payload type is `undefined`, the constructor is nullary.
+ * - If the payload is an object with only optional properties, the payload is optional.
  * - Otherwise, the constructor requires the payload.
  */
+type RequiredKeys<T extends object> = {
+	[K in keyof T]-?: {} extends Pick<T, K> ? never : K
+}[keyof T];
+
+type HasOnlyOptionalObjectKeys<T> = T extends object
+	? [RequiredKeys<T>] extends [never]
+		? true
+		: false
+	: false;
+
 type VariantConstructor<Default, K extends string, ALL extends VariantsRecord> =
 	[Default] extends [undefined]
 	? () => IronEnumVariant<K, Default, ALL>
+	: HasOnlyOptionalObjectKeys<Default> extends true
+	? (data?: Default) => IronEnumVariant<K, Default, ALL>
 	: (data: Default) => IronEnumVariant<K, Default, ALL>;
 
 /**

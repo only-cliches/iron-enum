@@ -20,6 +20,19 @@ describe("IronEnum builder & instance basics", () => {
     expect(val.toJSON()).toEqual({tag: "Ready", data: { finishedAt: at }});
   });
 
+  it("allows omitting payload for variants with only optional properties", () => {
+    const OptionalOnly = IronEnum<{
+      test: { opt1?: string; opt2?: string };
+    }>({ keys: ["test"] });
+
+    const val = OptionalOnly.test();
+    const valWithData = OptionalOnly.test({ opt1: "x" });
+
+    expect(val.tag).toBe("test");
+    expect(val.data).toBeUndefined();
+    expect(valWithData.data).toEqual({ opt1: "x" });
+  });
+
   it("supports match() with exhaustive handlers", () => {
     const msg = Status.Loading().match({
       Loading: () => "still working…",
